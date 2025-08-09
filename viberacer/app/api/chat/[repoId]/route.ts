@@ -4,6 +4,7 @@ import {
   streamText,
   UIMessage,
   experimental_createMCPClient as createMCPClient,
+  convertToCoreMessages,
 } from 'ai';
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { freestyle } from '@/lib/freestyle';
@@ -22,19 +23,25 @@ export async function POST(req: Request) {
   });
   const tools = await devServerMcp.tools();
 
-  const { messages }: { messages: UIMessage[] } = await req.json();
-  const result = streamText({
-    stopWhen: ({ steps }) => {
-      const lastStep = steps[steps.length - 1];
-      if (lastStep.toolCalls.length > 0) {
-        return false;
-      }
-      return true;
-    },
-    model: openai('gpt-4.1'),
-    system: 'You are a helpful assistant.',
-    messages: convertToModelMessages(messages),
-    tools,
-  });
-  return result.toUIMessageStreamResponse();
+  const data: { messages: UIMessage[] } = await req.json();
+  console.log(data);
+  try {
+    const result = streamText({
+      stopWhen: ({ steps }) => {
+        const lastStep = steps[steps.length - 1];
+        if (lastStep.toolCalls.length > 0) {
+          return false;
+        }
+        return true;
+      },
+      model: openai('gpt-4o'),
+      system: 'You are a helpful assistant.',
+      messages: convertToCoreMessages(data.messages),
+      tools,
+    });
+    return result.toUIMessageStreamResponse();
+  } catch (e) {
+    console.error(e);
+    return new Response(JSON.stringify({ error: e }), { status: 500 });
+  }
 }

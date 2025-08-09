@@ -42,7 +42,7 @@ export default function HomePage() {
   }, [contestState]);
 
   const handleJoin = () => {
-    router.push("/competition");
+    router.push("/compete");
   };
 
   const getStageDisplay = () => {

@@ -11,6 +11,10 @@ import FreestylePreview from "@/components/FreestylePreview";
 import { useChat } from "@ai-sdk/react";
 import { useState } from "react";
 import { DefaultChatTransport } from "ai";
+import { Thread } from "@/components/assistant-ui/thread";
+import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react"
+import { useVercelUseChatRuntime } from "@assistant-ui/react-ai-sdk";
+
 
 
 export default function CompeteWithRepo() {
@@ -18,17 +22,23 @@ export default function CompeteWithRepo() {
     const [input, setInput] = useState("");
     const repoId = params?.repoId ?? "";
 
-    const { messages, sendMessage, status } = useChat({
+    const chat = useChat({
         transport: new DefaultChatTransport({
             api: '/api/chat/' + repoId,
         }),
     });
 
+    const runtime = useVercelUseChatRuntime(chat);
 
     return (
         <div className="h-[calc(100vh-0px)] w-full">
             <ResizablePanelGroup direction="horizontal">
                 <ResizablePanel defaultSize={30} minSize={20} className="border-r">
+                    <AssistantRuntimeProvider runtime={runtime}>
+                        <Thread />
+                    </AssistantRuntimeProvider>
+                </ResizablePanel>
+                {/* <ResizablePanel defaultSize={30} minSize={20} className="border-r">
                     <div className="flex h-full flex-col">
                         <div className="px-4 py-3 border-b">
                             <h2 className="text-sm font-medium">Chat</h2>
@@ -42,6 +52,7 @@ export default function CompeteWithRepo() {
                                     )}
                                 </div>
                             ))}
+                            {error && <div className="text-red-500">{error.message}</div>}
                         </div>
                         <div className="p-3 border-t">
                             <input
@@ -58,7 +69,7 @@ export default function CompeteWithRepo() {
                             />
                         </div>
                     </div>
-                </ResizablePanel>
+                </ResizablePanel> */}
                 <ResizableHandle />
                 <ResizablePanel defaultSize={70} minSize={40}>
                     <FreestylePreview repoId={repoId} className="h-full w-full" />
