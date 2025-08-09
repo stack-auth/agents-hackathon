@@ -75,4 +75,15 @@ export default defineSchema({
     lastCheckedTime: v.number(), // Unix timestamp of last check
     wasSkipped: v.boolean(), // Whether current stage was manually skipped
   }),
+  submissions: defineTable({
+    userId: v.id("users"),
+    url: v.string(),
+    contestId: v.string(), // Format: "YYYY-MM-DD-HH" for the hour the contest started
+    submittedAt: v.number(), // Unix timestamp
+    score: v.optional(v.number()), // Will be set during judging
+    feedback: v.optional(v.string()), // Judging feedback
+  })
+    .index("by_user", ["userId"])
+    .index("by_contest", ["contestId"])
+    .index("by_user_contest", ["userId", "contestId"]),
 });
