@@ -10,4 +10,9 @@ export default defineSchema({
   numbers: defineTable({
     value: v.number(),
   }),
+  winners: defineTable({
+    name: v.string(),
+    timestamp: v.number(),
+    score: v.optional(v.number()),
+  }).index("by_timestamp", ["timestamp"]),
 });
