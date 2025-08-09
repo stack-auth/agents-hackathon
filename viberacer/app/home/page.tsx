@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import GlitchText from "../../react-bits/text-animations/GlitchText/GlitchText";
 import { downloadICS } from "../utils/icsGenerator";
 import { useUser } from "@stackframe/stack";
+import Portal from "../../components/Portal";
 
 export default function HomePage() {
   const router = useRouter();
@@ -18,6 +19,12 @@ export default function HomePage() {
   const user = useUser();
   const [canJoin, setCanJoin] = useState(false);
   const [, setTick] = useState(0);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newDisplayName, setNewDisplayName] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
 
   useEffect(() => {
     // Update every second to refresh countdown
@@ -27,6 +34,36 @@ export default function HomePage() {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // Handle clicking outside dropdown
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+        setEditingName(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
+  useEffect(() => {
+    // Update dropdown position when it opens
+    if (dropdownOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [dropdownOpen]);
 
   useEffect(() => {
     // Can join based on config settings
@@ -60,6 +97,24 @@ export default function HomePage() {
     router.push("/compete");
   };
 
+  const handleSaveDisplayName = async () => {
+    if (user && newDisplayName.trim()) {
+      try {
+        await user.update({ displayName: newDisplayName.trim() });
+        setEditingName(false);
+        setNewDisplayName("");
+      } catch (error) {
+        console.error("Failed to update display name:", error);
+      }
+    }
+  };
+
+  const handleSignOut = async () => {
+    await user?.signOut();
+    setDropdownOpen(false);
+    router.refresh();
+  };
+
   const getStageDisplay = () => {
     if (!contestState) return { title: "Loading...", subtitle: "" };
     
@@ -88,12 +143,12 @@ export default function HomePage() {
       }
     }
     
-    const nextContestTitle = canJoin && contestState.stage === "in_progress" 
-      ? `Contest started ${minutesAgo}min ago` 
+    const nextContestTitle = canJoin
+      ? (contestState.stage === "in_progress" ? `Contest started ${minutesAgo}min ago` : `CONTEST STARTING NOW` )
       : `NEXT CONTEST: ${countdownTime}`;
     
-    const subtitle = canJoin && contestState.stage === "in_progress"
-      ? `Next contest: ${countdownTime}`
+    const subtitle = canJoin
+      ? (contestState.stage === "in_progress" ? `Next contest: ${countdownTime}` : `Contest will run until ${nextContestTime}`)
       : "";
     
     return {
@@ -117,7 +172,6 @@ export default function HomePage() {
           <GlitchText
             speed={10}
             enableShadows={true}
-            enableOnHover={true}
           >
             VIBERACER
           </GlitchText>
@@ -309,12 +363,111 @@ export default function HomePage() {
         </div>
       </div>
       
+      {/* Stack Auth Credit - Top Left */}
+      <div 
+        className="fixed top-8 left-8"
+        style={{
+          fontFamily: "'Caveat', cursive",
+        }}
+      >
+        <p className="text-lg text-gray-400">
+          built with ♥ by{' '}
+          <a 
+            href="https://stack-auth.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-gray-300 underline hover:text-white transition-colors"
+          >
+            Stack Auth
+          </a>
+        </p>
+      </div>
+      
       {/* Welcome Message or Sign In - Top Right (above upcoming events) */}
       <div className="fixed top-8 right-8 font-mono">
         {user ? (
-          <p className="text-sm text-gray-300">
-            Welcome back, {user.displayName || user.primaryEmail?.split('@')[0] || 'friend'}!
-          </p>
+          <>
+            <button
+              ref={buttonRef}
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="text-sm text-gray-300 hover:text-white transition-colors cursor-pointer"
+            >
+              Welcome back, {user.displayName || user.primaryEmail?.split('@')[0] || 'friend'}! ▼
+            </button>
+            
+            {dropdownOpen && (
+              <Portal>
+                <div 
+                  ref={dropdownRef}
+                  className="fixed w-64 bg-black border border-gray-700 rounded-lg shadow-xl font-mono"
+                  style={{
+                    top: `${dropdownPosition.top}px`,
+                    right: `${dropdownPosition.right}px`,
+                    zIndex: 9999
+                  }}
+                >
+                  <div className="p-4 space-y-3">
+                    {editingName ? (
+                      <div className="space-y-2">
+                        <label className="text-xs text-gray-400">Display Name</label>
+                        <input
+                          type="text"
+                          value={newDisplayName}
+                          onChange={(e) => setNewDisplayName(e.target.value)}
+                          placeholder={user.displayName || user.primaryEmail?.split('@')[0] || 'Enter name'}
+                          className="w-full px-2 py-1 text-sm bg-gray-900 border border-gray-700 rounded focus:border-purple-500 focus:outline-none text-white"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveDisplayName();
+                            if (e.key === 'Escape') {
+                              setEditingName(false);
+                              setNewDisplayName("");
+                            }
+                          }}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSaveDisplayName}
+                            className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingName(false);
+                              setNewDisplayName("");
+                            }}
+                            className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            setEditingName(true);
+                            setNewDisplayName(user.displayName || user.primaryEmail?.split('@')[0] || '');
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-900 rounded transition-colors text-white"
+                        >
+                          ✏️ Edit Display Name
+                        </button>
+                        <div className="border-t border-gray-700"></div>
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-900 rounded transition-colors text-red-400 hover:text-red-300"
+                        >
+                          Sign Out →
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Portal>
+            )}
+          </>
         ) : (
           <button
             onClick={() => router.push('/handler/sign-in')}
