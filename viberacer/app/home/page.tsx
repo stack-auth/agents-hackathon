@@ -14,6 +14,7 @@ export default function HomePage() {
   const upcomingEvents = useQuery(api.events.getUpcomingEvents);
   const contestState = useQuery(api.race.getCurrentContestState);
   const contestConfig = useQuery(api.config.getContestConfig);
+  const currentUser = useQuery(api.auth.currentUser);
   const [canJoin, setCanJoin] = useState(false);
   const [, setTick] = useState(0);
 
@@ -131,14 +132,18 @@ export default function HomePage() {
               </div>
             )}
             
-            {canJoin && (
+            {canJoin ? (
               <button
                 onClick={handleJoin}
                 className="mt-4 px-10 py-5 text-xl bg-gradient-to-r bg-white text-black hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 font-bold rounded-lg shadow-2xl"
               >
                 JOIN CONTEST
               </button>
-            )}
+            ) : contestConfig && !canJoin ? (
+              <p className="text-sm text-gray-500 mt-4">
+                You'll be able to join from this page at :{String(contestConfig.stages.in_progress.startMinute).padStart(2, '0')}
+              </p>
+            ) : null}
           </div>
         </div>
         
@@ -300,9 +305,25 @@ export default function HomePage() {
         </div>
       </div>
       
-      {/* Upcoming Events - Top Right */}
+      {/* Welcome Message or Sign In - Top Right (above upcoming events) */}
+      <div className="fixed top-8 right-8 font-mono">
+        {currentUser ? (
+          <p className="text-sm text-gray-300">
+            Welcome back, {currentUser.name || currentUser.email?.split('@')[0] || 'friend'}!
+          </p>
+        ) : (
+          <button
+            onClick={() => router.push('/signin')}
+            className="text-sm text-gray-300 hover:text-white transition-colors cursor-pointer"
+          >
+            Sign in to compete →
+          </button>
+        )}
+      </div>
+      
+      {/* Upcoming Events - Top Right (always moved down) */}
       <div 
-        className="fixed top-8 right-8 transform rotate-[-2deg]"
+        className="fixed top-20 right-8 transform rotate-[-2deg]"
         style={{
           fontFamily: "'Caveat', cursive",
         }}
