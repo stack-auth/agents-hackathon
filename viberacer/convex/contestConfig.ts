@@ -13,12 +13,12 @@ export const CONTEST_CONFIG = {
     // Contest runs from :05 to :00 (55 minutes)
     in_progress: {
       startMinute: 5,
-      endMinute: 41, // 0 means top of next hour
+      endMinute: 0, // 0 means top of next hour
     },
     
     // Judging stage 1 runs from :00 to :01 (1 minute)
     judging_1: {
-      startMinute: 41,
+      startMinute: 0,
       endMinute: 1,
     },
     
