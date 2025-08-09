@@ -1,9 +1,6 @@
 import { internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
-import { 
-  prepareContestForJudging,
-  getCurrentContestId 
-} from "./contestHelpers";
+import { prepareContestForJudging } from "./contestHelpers";
 
 type ContestStage = "in_progress" | "judging_1" | "judging_2" | "judging_3" | "break";
 
@@ -14,11 +11,23 @@ type ContestStage = "in_progress" | "judging_1" | "judging_2" | "judging_3" | "b
  * Edit this file to add custom logic when stages complete
  */
 const stageEndHandlers: Record<ContestStage, (ctx: any) => Promise<void>> = {
-  // Called when contest ends (at :41)
+  // Called when contest ends (at :00)
   in_progress: async (ctx) => {
-    const contestId = getCurrentContestId();
-    console.log(`Contest ${contestId} ended, starting judging phase`);
-        
+    // Mark current contest as completed
+    const activeContest = await ctx.db
+      .query("contests")
+      .withIndex("by_status", (q: any) => q.eq("status", "active"))
+      .order("desc")
+      .first();
+    
+    if (activeContest) {
+      await ctx.db.patch(activeContest._id, {
+        status: "completed",
+        endTimestamp: Date.now(),
+      });
+      console.log(`Contest ${activeContest._id} ended, starting judging phase`);
+    }
+    
     // Prepare for judging
     const submissions = await prepareContestForJudging(ctx.db);
     console.log(`${submissions.length} submissions ready for judging`);
@@ -76,11 +85,22 @@ const stageEndHandlers: Record<ContestStage, (ctx: any) => Promise<void>> = {
   break: async (ctx) => {
     console.log("Break ended, new contest starting");
     
-    // TODO: Add your contest start logic here
-    // Examples:
-    // - Reset submission system
-    // - Clear temporary data
-    // - Send contest start notifications
+    // Always create a new contest for the upcoming in_progress stage
+    const now = new Date();
+    
+    // Round down to the current hour for scheduled timestamp
+    const scheduledHour = new Date(now);
+    scheduledHour.setMinutes(0, 0, 0);
+    const scheduledTimestamp = scheduledHour.getTime();
+    
+    // Always create a new contest - there can be multiple per hour due to skipping
+    const contestId = await ctx.db.insert("contests", {
+      type: "hourly",
+      scheduledTimestamp,
+      actualTimestamp: Date.now(),
+      status: "active",
+    });
+    console.log(`Created new contest: ${contestId}`);
   },
 };
 

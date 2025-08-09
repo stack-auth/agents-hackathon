@@ -5,6 +5,20 @@ import { v } from "convex/values";
 // requires indexes defined on `authTables`.
 // The schema provides more precise TypeScript types.
 export default defineSchema({
+  contests: defineTable({
+    type: v.string(), // e.g., "hourly", "special", "sponsored"
+    scheduledTimestamp: v.number(), // The full hour when contest was scheduled (e.g., 3:00:00)
+    actualTimestamp: v.number(), // When it actually switched to in_progress
+    endTimestamp: v.optional(v.number()), // When contest ended
+    status: v.union(
+      v.literal("scheduled"),
+      v.literal("active"),
+      v.literal("completed")
+    ),
+  })
+    .index("by_scheduled", ["scheduledTimestamp"])
+    .index("by_actual", ["actualTimestamp"])
+    .index("by_status", ["status"]),
   numbers: defineTable({
     value: v.number(),
   }),
@@ -52,15 +66,24 @@ export default defineSchema({
     manualOverride: v.optional(v.boolean()),
   }),
   submission: defineTable({
+    contestId: v.id("contests"),
+    userId: v.string(),
     repoId: v.string(),
     timestamp: v.number(),
-    username: v.optional(v.string()),
-  }),
+  })
+    .index("by_contest", ["contestId"])
+    .index("by_user", ["userId"])
+    .index("by_contest_user", ["contestId", "userId"]),
   submissionReview: defineTable({
+    contestId: v.id("contests"),
+    userId: v.string(),
     repoId: v.string(),
     rating: v.number(),
     timestamp: v.number(),
-  }),
+  })
+    .index("by_contest", ["contestId"])
+    .index("by_user", ["userId"])
+    .index("by_contest_user", ["contestId", "userId"]),
   stageState: defineTable({
     currentStage: v.union(
       v.literal("in_progress"),

@@ -48,7 +48,7 @@ export const CONTEST_CONFIG = {
   joinWindow: {
     // Allow joining for the first 15 minutes after contest starts
     // (from minute 5 to minute 20)
-    durationMinutes: 15,
+    durationMinutes: 58,
     
     // Can always join during these stages (regardless of time)
     alwaysJoinableStages: ["judging_1", "judging_2", "judging_3", "break"],

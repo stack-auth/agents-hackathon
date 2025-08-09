@@ -366,11 +366,8 @@ export default function HomePage() {
       {/* Stack Auth Credit - Top Left */}
       <div 
         className="fixed top-8 left-8"
-        style={{
-          fontFamily: "'Caveat', cursive",
-        }}
       >
-        <p className="text-lg text-gray-400">
+        <p className="text-sm text-gray-400">
           built with ♥ by{' '}
           <a 
             href="https://stack-auth.com" 

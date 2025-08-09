@@ -4,14 +4,43 @@ import { v } from "convex/values";
 export const createSubmission = mutation({
   args: {
     repoId: v.string(),
-    username: v.string(),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("submission", {
-      repoId: args.repoId,
-      timestamp: Date.now(),
-      username: args.username,
-    });
+    // Get active contest
+    const activeContest = await ctx.db
+      .query("contests")
+      .withIndex("by_status", q => q.eq("status", "active"))
+      .order("desc")
+      .first();
+    
+    if (!activeContest) {
+      throw new Error("No active contest found");
+    }
+    
+    // Check if user already submitted for this contest
+    const existing = await ctx.db
+      .query("submission")
+      .withIndex("by_contest_user", q => 
+        q.eq("contestId", activeContest._id).eq("userId", args.userId)
+      )
+      .first();
+    
+    if (existing) {
+      // Update existing submission
+      await ctx.db.patch(existing._id, {
+        repoId: args.repoId,
+        timestamp: Date.now(),
+      });
+    } else {
+      // Create new submission
+      await ctx.db.insert("submission", {
+        contestId: activeContest._id,
+        userId: args.userId,
+        repoId: args.repoId,
+        timestamp: Date.now(),
+      });
+    }
   },
 });
 
@@ -21,7 +50,22 @@ export const getRandomSubmissionsExcluding = query({
     limit: v.number(),
   },
   handler: async (ctx, args) => {
-    const all = await ctx.db.query("submission").collect();
+    // Get active contest
+    const activeContest = await ctx.db
+      .query("contests")
+      .withIndex("by_status", q => q.eq("status", "active"))
+      .order("desc")
+      .first();
+    
+    if (!activeContest) {
+      return [];
+    }
+    
+    const all = await ctx.db
+      .query("submission")
+      .withIndex("by_contest", q => q.eq("contestId", activeContest._id))
+      .collect();
+    
     const pool = all.filter((s) => s.repoId !== args.excludeRepoId);
     // Shuffle
     for (let i = pool.length - 1; i > 0; i--) {
@@ -37,13 +81,45 @@ export const createSubmissionReview = mutation({
   args: {
     repoId: v.string(),
     rating: v.number(),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("submissionReview", {
-      repoId: args.repoId,
-      rating: args.rating,
-      timestamp: Date.now(),
-    });
+    // Get active contest
+    const activeContest = await ctx.db
+      .query("contests")
+      .withIndex("by_status", q => q.eq("status", "active"))
+      .order("desc")
+      .first();
+    
+    if (!activeContest) {
+      throw new Error("No active contest found");
+    }
+    
+    // Check if user already reviewed for this contest
+    const existing = await ctx.db
+      .query("submissionReview")
+      .withIndex("by_contest_user", q => 
+        q.eq("contestId", activeContest._id).eq("userId", args.userId)
+      )
+      .first();
+    
+    if (existing) {
+      // Update existing review
+      await ctx.db.patch(existing._id, {
+        repoId: args.repoId,
+        rating: args.rating,
+        timestamp: Date.now(),
+      });
+    } else {
+      // Create new review
+      await ctx.db.insert("submissionReview", {
+        contestId: activeContest._id,
+        userId: args.userId,
+        repoId: args.repoId,
+        rating: args.rating,
+        timestamp: Date.now(),
+      });
+    }
   },
 });
 
@@ -69,27 +145,6 @@ export function validateSubmissionUrl(url: string): { valid: boolean; error?: st
   }
 }
 
-// Get current contest ID (hour when contest started)
-function getCurrentContestId(): string {
-  const now = new Date();
-  // Contest starts at :05 of each hour
-  const contestHour = new Date(now);
-  
-  // If we're before :05, the contest is from the previous hour
-  if (now.getMinutes() < 5) {
-    contestHour.setHours(contestHour.getHours() - 1);
-  }
-  
-  // Set to :05 of the contest hour
-  contestHour.setMinutes(5, 0, 0);
-  
-  const year = contestHour.getFullYear();
-  const month = String(contestHour.getMonth() + 1).padStart(2, '0');
-  const day = String(contestHour.getDate()).padStart(2, '0');
-  const hour = String(contestHour.getHours()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}-${hour}`;
-}
 
 export const submitUrl = mutation({
   args: { 
@@ -108,36 +163,45 @@ export const submitUrl = mutation({
       throw new Error("Submissions are only accepted during contest time");
     }
     
+    // Get active contest
+    const activeContest = await ctx.db
+      .query("contests")
+      .withIndex("by_status", (q: any) => q.eq("status", "active"))
+      .order("desc")
+      .first();
+    
+    if (!activeContest) {
+      throw new Error("No active contest found");
+    }
+    
     // Validate URL
     const validation = validateSubmissionUrl(args.url);
     if (!validation.valid) {
       throw new Error(validation.error || "Invalid URL");
     }
     
-    const contestId = getCurrentContestId();
-    
     // Check if user already submitted for this contest
     const existing = await ctx.db
-      .query("submissions")
-      .withIndex("by_user_contest", q => 
-        q.eq("userId", args.userId).eq("contestId", contestId)
+      .query("submission")
+      .withIndex("by_contest_user", (q: any) => 
+        q.eq("contestId", activeContest._id).eq("userId", args.userId)
       )
       .first();
     
     if (existing) {
       // Update existing submission
       await ctx.db.patch(existing._id, {
-        url: args.url,
-        submittedAt: Date.now(),
+        repoId: args.url,
+        timestamp: Date.now(),
       });
       return { success: true, updated: true };
     } else {
-      // Create new submission
-      await ctx.db.insert("submissions", {
+      // Create new submission  
+      await ctx.db.insert("submission", {
+        contestId: activeContest._id,
         userId: args.userId,
-        url: args.url,
-        contestId,
-        submittedAt: Date.now(),
+        repoId: args.url,
+        timestamp: Date.now(),
       });
       return { success: true, updated: false };
     }
@@ -153,27 +217,45 @@ export const getMySubmission = query({
       return null;
     }
     
-    const contestId = getCurrentContestId();
+    // Get active contest
+    const activeContest = await ctx.db
+      .query("contests")
+      .withIndex("by_status", (q: any) => q.eq("status", "active"))
+      .order("desc")
+      .first();
+    
+    if (!activeContest) {
+      return null;
+    }
     
     const submission = await ctx.db
-      .query("submissions")
-      .withIndex("by_user_contest", q => 
-        q.eq("userId", args.userId!).eq("contestId", contestId)
+      .query("submission")
+      .withIndex("by_contest_user", (q: any) => 
+        q.eq("contestId", activeContest._id).eq("userId", args.userId!)
       )
       .first();
     
-    return submission;
+    return submission ? { ...submission, url: submission.repoId } : null;
   },
 });
 
 export const getCurrentContestSubmissions = query({
   args: {},
   handler: async (ctx) => {
-    const contestId = getCurrentContestId();
+    // Get active contest
+    const activeContest = await ctx.db
+      .query("contests")
+      .withIndex("by_status", (q: any) => q.eq("status", "active"))
+      .order("desc")
+      .first();
+    
+    if (!activeContest) {
+      return [];
+    }
     
     const submissions = await ctx.db
-      .query("submissions")
-      .withIndex("by_contest", q => q.eq("contestId", contestId))
+      .query("submission")
+      .withIndex("by_contest", (q: any) => q.eq("contestId", activeContest._id))
       .collect();
     
     // For now, just return submissions with userId as userName
