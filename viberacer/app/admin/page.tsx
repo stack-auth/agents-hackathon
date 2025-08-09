@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useRouter } from "next/navigation";
@@ -8,9 +9,24 @@ export default function AdminPage() {
   const router = useRouter();
   const contestState = useQuery(api.race.getCurrentContestState);
   const advanceStage = useMutation(api.race.advanceStage);
+  const initMonitoring = useMutation(api.race.initializeMonitoring);
+  const [, setTick] = useState(0);
+  
+  // Update every second to refresh countdown
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick(t => t + 1);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAdvance = async () => {
     await advanceStage();
+  };
+  
+  const handleInitMonitoring = async () => {
+    await initMonitoring();
   };
 
   const getStageInfo = () => {
@@ -83,6 +99,12 @@ export default function AdminPage() {
               ADVANCE TO: {getNextStage()}
             </button>
             
+            <button
+              onClick={handleInitMonitoring}
+              className="w-full px-6 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors text-sm"
+            >
+              START MONITORING (if not running)
+            </button>
           </div>
           
           <div className="pt-6 border-t border-gray-200">

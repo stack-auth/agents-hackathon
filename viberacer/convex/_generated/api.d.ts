@@ -20,6 +20,7 @@ import type * as config from "../config.js";
 import type * as contestConfig from "../contestConfig.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
+import type * as init from "../init.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as race from "../race.js";
 import type * as seed from "../seed.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   contestConfig: typeof contestConfig;
   events: typeof events;
   http: typeof http;
+  init: typeof init;
   myFunctions: typeof myFunctions;
   race: typeof race;
   seed: typeof seed;

@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "ogl": "^1.0.11",
-    "freestyle-sandboxes": "^0.0.93",
-    "react-resizable-panels": "^3.0.4"
-  }
-}

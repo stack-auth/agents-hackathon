@@ -53,4 +53,16 @@ export default defineSchema({
     startedAt: v.optional(v.number()),
     manualOverride: v.optional(v.boolean()),
   }),
+  stageState: defineTable({
+    currentStage: v.union(
+      v.literal("in_progress"),
+      v.literal("judging_1"),
+      v.literal("judging_2"),
+      v.literal("judging_3"),
+      v.literal("break")
+    ),
+    nextStageTime: v.number(), // Unix timestamp when next stage starts
+    lastCheckedTime: v.number(), // Unix timestamp of last check
+    wasSkipped: v.boolean(), // Whether current stage was manually skipped
+  }),
 });
