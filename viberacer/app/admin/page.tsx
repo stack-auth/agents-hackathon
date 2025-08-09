@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 
 export default function AdminPage() {
   const router = useRouter();
-  const contestState = useQuery(api.race.getCurrentContestState);
   const adminData = useQuery(api.adminData.getAdminData);
   const advanceStage = useMutation(api.race.advanceStage);
   const initMonitoring = useMutation(api.race.initializeMonitoring);
