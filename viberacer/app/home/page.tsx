@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import Galaxy from "../../react-bits/background/Galaxy/Galaxy";
 import GlitchText from "../../react-bits/text-animations/GlitchText/GlitchText";
 
 export default function HomePage() {
