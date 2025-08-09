@@ -7,44 +7,34 @@ import { api } from "../../convex/_generated/api";
 
 export default function HomePage() {
   const router = useRouter();
-  const lastWinner = useQuery(api.winners.getLastWinner);
+  const recentWinners = useQuery(api.winners.getRecentWinners);
   const topWinners = useQuery(api.winners.getWeeklyTopWinners);
   const upcomingEvents = useQuery(api.events.getUpcomingEvents);
   const contestState = useQuery(api.race.getCurrentContestState);
-  const [timeDisplay, setTimeDisplay] = useState("");
   const [canJoin, setCanJoin] = useState(false);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    if (!contestState) {
-      setTimeDisplay("");
-      return;
-    }
-
-    const updateTimer = () => {
-      if (contestState.timeToNext !== null) {
-        const minutes = Math.floor(contestState.timeToNext / 60);
-        const seconds = Math.floor(contestState.timeToNext % 60);
-        setTimeDisplay(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
-      }
-    };
-
-    updateTimer();
+    // Update every second to refresh countdown
     const interval = setInterval(() => {
-      if (contestState.timeToNext !== null && contestState.timeToNext > 0) {
-        contestState.timeToNext--;
-        updateTimer();
-      }
+      setTick(t => t + 1);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [contestState]);
+  }, []);
 
   useEffect(() => {
-    // Can join if in_progress and within first 15 minutes (from :05 to :20)
+    // Can join based on config settings
+    const now = new Date();
+    const minutes = now.getMinutes();
+    
     if (contestState?.stage === "in_progress") {
-      const now = new Date();
-      const minutes = now.getMinutes();
+      // Can join in first 15 minutes of contest (configurable)
+      // Config: from :05 to :20 by default
       setCanJoin(minutes >= 5 && minutes < 20);
+    } else if (["judging_1", "judging_2", "judging_3", "break"].includes(contestState?.stage || "")) {
+      // Can join during judging or break stages (configurable)
+      setCanJoin(true);
     } else {
       setCanJoin(false);
     }
@@ -57,56 +47,42 @@ export default function HomePage() {
   const getStageDisplay = () => {
     if (!contestState) return { title: "Loading...", subtitle: "" };
     
-    switch (contestState.stage) {
-      case "in_progress":
-        if (canJoin) {
-          return { 
-            title: "Join the contest now!", 
-            subtitle: ""
-          };
-        } else {
-          // Calculate time to next contest (next hour at :05)
-          const now = new Date();
-          const minutes = now.getMinutes();
-          const seconds = now.getSeconds();
-          let secondsToNext;
-          if (minutes < 5) {
-            secondsToNext = (5 - minutes - 1) * 60 + (60 - seconds);
-          } else {
-            secondsToNext = (65 - minutes - 1) * 60 + (60 - seconds);
-          }
-          const hoursToNext = Math.floor(secondsToNext / 3600);
-          const minsToNext = Math.floor((secondsToNext % 3600) / 60);
-          const secsToNext = secondsToNext % 60;
-          const timeToNext = `${hoursToNext}:${String(minsToNext).padStart(2, '0')}:${String(secsToNext).padStart(2, '0')}`;
-          return { 
-            title: `NEXT CONTEST: ${timeToNext}`, 
-            subtitle: ""
-          };
-        }
-      case "judging_1":
-        return { 
-          title: "JUDGING", 
-          subtitle: "Stage 1 - Initial review"
-        };
-      case "judging_2":
-        return { 
-          title: "JUDGING", 
-          subtitle: "Stage 2 - Deep evaluation"
-        };
-      case "judging_3":
-        return { 
-          title: "JUDGING", 
-          subtitle: "Stage 3 - Final scoring"
-        };
-      case "break":
-        return { 
-          title: `NEXT CONTEST: ${timeDisplay || "0:00"}`, 
-          subtitle: ""
-        };
-      default:
-        return { title: "Unknown", subtitle: "" };
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const currentSeconds = now.getSeconds();
+    
+    // Calculate time to next full hour (e.g. 1:00pm, not 1:05pm)
+    const secondsToNextHour = (60 - currentMinutes - 1) * 60 + (60 - currentSeconds);
+    const hoursToNext = Math.floor(secondsToNextHour / 3600);
+    const minsToNext = Math.floor((secondsToNextHour % 3600) / 60);
+    const secsToNext = secondsToNextHour % 60;
+    const countdownTime = `${String(hoursToNext).padStart(2, '0')}:${String(minsToNext).padStart(2, '0')}:${String(secsToNext).padStart(2, '0')}`;
+    
+    // Get the next hour time display
+    const nextHour = (currentHour + 1) % 24;
+    const period = nextHour >= 12 ? 'pm' : 'am';
+    const displayHour = nextHour === 0 ? 12 : nextHour > 12 ? nextHour - 12 : nextHour;
+    const nextContestTime = `${displayHour}:00${period}`;
+    
+    // Calculate how long ago contest started (for in_progress stage)
+    let minutesAgo = 0;
+    if (contestState?.stage === "in_progress" && currentMinutes >= 5) {
+      minutesAgo = currentMinutes - 5;
     }
+    
+    const nextContestTitle = canJoin && contestState.stage === "in_progress" 
+      ? `Contest started ${minutesAgo}min ago` 
+      : `NEXT CONTEST: ${countdownTime}`;
+    
+    const subtitle = canJoin && contestState.stage === "in_progress"
+      ? `Next contest: ${countdownTime}`
+      : "";
+    
+    return {
+      title: nextContestTitle,
+      subtitle: subtitle,
+    };
   };
 
   const stageInfo = getStageDisplay();
@@ -146,7 +122,7 @@ export default function HomePage() {
       
       <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet" />
       
-      {/* Last Winner - Bottom Right */}
+      {/* Recent Winners - Bottom Right */}
       <div 
         className="fixed bottom-8 right-8 transform rotate-[-5deg]"
         style={{
@@ -154,18 +130,22 @@ export default function HomePage() {
         }}
       >
         <div className="text-gray-700">
-          <p className="text-xl mb-2">last winner:</p>
-          {lastWinner ? (
-            <div className="flex gap-4 items-baseline">
-              <p className="text-2xl font-bold text-black">
-                {lastWinner.name}
-              </p>
-              <p className="text-lg text-gray-600">
-                {lastWinner.contestHour}
-              </p>
+          <p className="text-xl mb-2">recent winners:</p>
+          {recentWinners && recentWinners.length > 0 ? (
+            <div className="space-y-1">
+              {recentWinners.map((winner, idx) => (
+                <div key={idx} className="flex gap-4 items-baseline">
+                  <p className="text-xl font-bold text-black">
+                    {winner.name}
+                  </p>
+                  <p className="text-lg text-gray-600">
+                    {winner.contestHour}
+                  </p>
+                </div>
+              ))}
             </div>
           ) : (
-            <p className="text-2xl font-bold text-black">
+            <p className="text-xl text-black">
               no contests yet
             </p>
           )}

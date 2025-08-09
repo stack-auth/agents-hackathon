@@ -1,4 +1,6 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { CONTEST_CONFIG } from "./contestConfig";
 
 type ContestStage = "in_progress" | "judging_1" | "judging_2" | "judging_3" | "break";
 
@@ -6,26 +8,27 @@ function getExpectedStage(): { stage: ContestStage; timeToNext: number } {
   const now = new Date();
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
+  const { stages } = CONTEST_CONFIG;
   
-  if (minutes >= 5) {
-    // Contest in progress (5:00 - 59:59)
+  if (minutes >= stages.in_progress.startMinute) {
+    // Contest in progress
     const timeToNext = (60 - minutes) * 60 - seconds;
     return { stage: "in_progress", timeToNext };
-  } else if (minutes === 0) {
-    // Judging stage 1 (0:00 - 0:59)
-    const timeToNext = 60 - seconds;
+  } else if (minutes >= stages.judging_1.startMinute && minutes < stages.judging_2.startMinute) {
+    // Judging stage 1
+    const timeToNext = (stages.judging_2.startMinute - minutes) * 60 - seconds;
     return { stage: "judging_1", timeToNext };
-  } else if (minutes === 1) {
-    // Judging stage 2 (1:00 - 1:59)
-    const timeToNext = 60 - seconds;
+  } else if (minutes >= stages.judging_2.startMinute && minutes < stages.judging_3.startMinute) {
+    // Judging stage 2
+    const timeToNext = (stages.judging_3.startMinute - minutes) * 60 - seconds;
     return { stage: "judging_2", timeToNext };
-  } else if (minutes === 2) {
-    // Judging stage 3 (2:00 - 2:59)
-    const timeToNext = 60 - seconds;
+  } else if (minutes >= stages.judging_3.startMinute && minutes < stages.break.startMinute) {
+    // Judging stage 3
+    const timeToNext = (stages.break.startMinute - minutes) * 60 - seconds;
     return { stage: "judging_3", timeToNext };
   } else {
-    // Break (3:00 - 4:59)
-    const timeToNext = (5 - minutes) * 60 - seconds;
+    // Break
+    const timeToNext = (stages.in_progress.startMinute - minutes) * 60 - seconds;
     return { stage: "break", timeToNext };
   }
 }
@@ -70,6 +73,12 @@ export const advanceStage = mutation({
   args: {},
   handler: async (ctx) => {
     const expected = getExpectedStage();
+    
+    // Trigger the end handler for the skipped stage
+    await ctx.scheduler.runAfter(0, internal.stageHandlers.handleStageEnd, {
+      stage: expected.stage,
+      wasSkipped: true,
+    });
     
     // Clear any existing skip record
     const existingRecord = await ctx.db.query("contestState").first();

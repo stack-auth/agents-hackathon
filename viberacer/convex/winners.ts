@@ -20,6 +20,29 @@ export const getLastWinner = query({
   },
 });
 
+export const getRecentWinners = query({
+  args: {},
+  handler: async (ctx) => {
+    // Get the 3 most recent winners
+    const recentWinners = await ctx.db
+      .query("winners")
+      .withIndex("by_timestamp")
+      .order("desc")
+      .take(3);
+    
+    // If no winners exist, return sample data
+    if (recentWinners.length === 0) {
+      return [
+        { name: "alice_dev", contestHour: "12:00pm" },
+        { name: "bob_ninja", contestHour: "11:00am" },
+        { name: "charlie", contestHour: "10:00am" },
+      ];
+    }
+    
+    return recentWinners;
+  },
+});
+
 export const getWeeklyTopWinners = query({
   args: {},
   handler: async (ctx) => {
