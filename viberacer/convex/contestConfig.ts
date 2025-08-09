@@ -13,12 +13,12 @@ export const CONTEST_CONFIG = {
     // Contest runs from :05 to :00 (55 minutes)
     in_progress: {
       startMinute: 5,
-      endMinute: 0, // 0 means top of next hour
+      endMinute: 41, // 0 means top of next hour
     },
     
     // Judging stage 1 runs from :00 to :01 (1 minute)
     judging_1: {
-      startMinute: 0,
+      startMinute: 41,
       endMinute: 1,
     },
     
@@ -75,16 +75,23 @@ export function getCurrentStageFromConfig(): string {
   
   const { stages } = CONTEST_CONFIG;
   
-  // Check each stage to see if we're in it
-  if (currentMinute >= stages.in_progress.startMinute || currentMinute < stages.judging_1.startMinute) {
+  // Check each stage based on start/end minutes
+  if (currentMinute >= stages.in_progress.startMinute && currentMinute < stages.judging_1.startMinute) {
     return "in_progress";
-  } else if (currentMinute >= stages.judging_1.startMinute && currentMinute < stages.judging_2.startMinute) {
+  } else if (currentMinute >= stages.judging_1.startMinute) {
+    // judging_1 might wrap around the hour (e.g., 41-1)
     return "judging_1";
   } else if (currentMinute >= stages.judging_2.startMinute && currentMinute < stages.judging_3.startMinute) {
     return "judging_2";
   } else if (currentMinute >= stages.judging_3.startMinute && currentMinute < stages.break.startMinute) {
     return "judging_3";
+  } else if (currentMinute >= stages.break.startMinute && currentMinute < stages.in_progress.startMinute) {
+    return "break";
   } else {
+    // We're between minute 0 and judging_2.startMinute, which means we're still in judging_1
+    if (currentMinute < stages.judging_2.startMinute) {
+      return "judging_1";
+    }
     return "break";
   }
 }

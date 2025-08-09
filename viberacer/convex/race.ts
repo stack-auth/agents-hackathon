@@ -10,24 +10,39 @@ function getExpectedStage(): { stage: ContestStage; timeToNext: number } {
   const seconds = now.getSeconds();
   const { stages } = CONTEST_CONFIG;
   
-  if (minutes >= stages.in_progress.startMinute) {
-    // Contest in progress
-    const timeToNext = (60 - minutes) * 60 - seconds;
+  // Check each stage based on the configured start/end minutes
+  if (minutes >= stages.in_progress.startMinute && minutes < stages.judging_1.startMinute) {
+    // Contest in progress (e.g., 5-41)
+    const timeToNext = (stages.judging_1.startMinute - minutes) * 60 - seconds;
     return { stage: "in_progress", timeToNext };
-  } else if (minutes >= stages.judging_1.startMinute && minutes < stages.judging_2.startMinute) {
-    // Judging stage 1
-    const timeToNext = (stages.judging_2.startMinute - minutes) * 60 - seconds;
+  } else if (minutes >= stages.judging_1.startMinute && minutes < stages.judging_1.endMinute) {
+    // Judging stage 1 (e.g., 41-42 wraps to next hour)
+    // Handle wrap-around to next hour
+    const endMinute = stages.judging_1.endMinute || 60;
+    const timeToNext = endMinute < stages.judging_1.startMinute 
+      ? (60 - minutes + endMinute) * 60 - seconds  // Wraps to next hour
+      : (endMinute - minutes) * 60 - seconds;
     return { stage: "judging_1", timeToNext };
   } else if (minutes >= stages.judging_2.startMinute && minutes < stages.judging_3.startMinute) {
-    // Judging stage 2
+    // Judging stage 2 (e.g., 1-2)
     const timeToNext = (stages.judging_3.startMinute - minutes) * 60 - seconds;
     return { stage: "judging_2", timeToNext };
   } else if (minutes >= stages.judging_3.startMinute && minutes < stages.break.startMinute) {
-    // Judging stage 3
+    // Judging stage 3 (e.g., 2-3)
     const timeToNext = (stages.break.startMinute - minutes) * 60 - seconds;
     return { stage: "judging_3", timeToNext };
+  } else if (minutes >= stages.break.startMinute && minutes < stages.in_progress.startMinute) {
+    // Break (e.g., 3-5)
+    const timeToNext = (stages.in_progress.startMinute - minutes) * 60 - seconds;
+    return { stage: "break", timeToNext };
   } else {
-    // Break
+    // Special case: we're past minute 41 but before minute 60
+    // This is judging_1 that wraps around the hour
+    if (minutes >= stages.judging_1.startMinute) {
+      const timeToNext = (60 - minutes + stages.judging_1.endMinute) * 60 - seconds;
+      return { stage: "judging_1", timeToNext };
+    }
+    // Default to break if we can't determine
     const timeToNext = (stages.in_progress.startMinute - minutes) * 60 - seconds;
     return { stage: "break", timeToNext };
   }
