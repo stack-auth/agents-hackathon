@@ -56,6 +56,12 @@ export default defineSchema({
   submission: defineTable({
     repoId: v.string(),
     timestamp: v.number(),
+    username: v.optional(v.string()),
+  }),
+  submissionReview: defineTable({
+    repoId: v.string(),
+    rating: v.number(),
+    timestamp: v.number(),
   }),
   stageState: defineTable({
     currentStage: v.union(

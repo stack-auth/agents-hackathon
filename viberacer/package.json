@@ -19,6 +19,7 @@
     "@assistant-ui/react-markdown": "0.10.8",
     "@convex-dev/auth": "^0.0.81",
     "@modelcontextprotocol/sdk": "^1.6.2",
+    "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.7",
     "ai": "^5.0.8",

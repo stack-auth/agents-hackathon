@@ -27,6 +27,7 @@ import type * as race from "../race.js";
 import type * as seed from "../seed.js";
 import type * as stageHandlers from "../stageHandlers.js";
 import type * as stageMonitor from "../stageMonitor.js";
+import type * as submissions from "../submissions.js";
 import type * as winners from "../winners.js";
 
 /**
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   stageHandlers: typeof stageHandlers;
   stageMonitor: typeof stageMonitor;
+  submissions: typeof submissions;
   winners: typeof winners;
 }>;
 export declare const api: FilterApi<

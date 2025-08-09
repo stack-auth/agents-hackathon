@@ -28,8 +28,8 @@ export async function POST(req: Request) {
     stopWhen: ({ steps }) => {
       return false;
     },
-    model: openai('gpt-4o'),
-    system: 'Your job is to help the user build a project of their choice. Use Next.js, Tailwind CSS, and Shadcn UI to build the project. Use the tools provided to read and edit the project files instead of asking the user for information.',
+    model: openai('gpt-5'),
+    system: 'Your job is to help the user build a project of their choice. Use Next.js, Tailwind CSS, and Shadcn UI to build the project. Use the tools provided to read and edit the project files instead of asking the user for information. The user has an existing Next.js template project in /template folder.',
     messages: convertToCoreMessages(data.messages),
     tools,
   });
