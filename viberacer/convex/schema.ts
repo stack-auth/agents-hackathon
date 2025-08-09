@@ -34,6 +34,13 @@ export default defineSchema({
       v.literal("judging_3"),
       v.literal("break")
     )),
+    skippedTo: v.optional(v.union(
+      v.literal("in_progress"),
+      v.literal("judging_1"),
+      v.literal("judging_2"),
+      v.literal("judging_3"),
+      v.literal("break")
+    )),
     skippedAt: v.optional(v.number()),
     // Legacy fields for migration
     stage: v.optional(v.union(

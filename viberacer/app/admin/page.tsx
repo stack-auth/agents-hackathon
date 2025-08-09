@@ -8,14 +8,9 @@ export default function AdminPage() {
   const router = useRouter();
   const contestState = useQuery(api.race.getCurrentContestState);
   const advanceStage = useMutation(api.race.advanceStage);
-  const clearSkips = useMutation(api.race.clearSkips);
 
   const handleAdvance = async () => {
     await advanceStage();
-  };
-
-  const handleClearSkips = async () => {
-    await clearSkips();
   };
 
   const getStageInfo = () => {
@@ -88,14 +83,6 @@ export default function AdminPage() {
               ADVANCE TO: {getNextStage()}
             </button>
             
-            {contestState?.wasSkipped && (
-              <button
-                onClick={handleClearSkips}
-                className="w-full px-6 py-3 bg-gray-600 text-white hover:bg-gray-700 transition-colors"
-              >
-                CLEAR ALL SKIPS
-              </button>
-            )}
           </div>
           
           <div className="pt-6 border-t border-gray-200">
