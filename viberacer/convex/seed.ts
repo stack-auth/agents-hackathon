@@ -4,11 +4,11 @@ export const seedWinners = internalMutation({
   args: {},
   handler: async (ctx) => {
     const winners = [
-      { name: "alice_dev", timestamp: Date.now() - 3600000, raceHour: "11:00am", score: 9850 },
-      { name: "bob_ninja", timestamp: Date.now() - 7200000, raceHour: "10:00am", score: 9720 },
-      { name: "charlie", timestamp: Date.now() - 10800000, raceHour: "9:00am", score: 9600 },
-      { name: "david_rust", timestamp: Date.now() - 14400000, raceHour: "8:00am", score: 9500 },
-      { name: "emma_js", timestamp: Date.now() - 18000000, raceHour: "7:00am", score: 9450 },
+      { name: "alice_dev", timestamp: Date.now() - 3600000, contestHour: "11:00am", score: 9850 },
+      { name: "bob_ninja", timestamp: Date.now() - 7200000, contestHour: "10:00am", score: 9720 },
+      { name: "charlie", timestamp: Date.now() - 10800000, contestHour: "9:00am", score: 9600 },
+      { name: "david_rust", timestamp: Date.now() - 14400000, contestHour: "8:00am", score: 9500 },
+      { name: "emma_js", timestamp: Date.now() - 18000000, contestHour: "7:00am", score: 9450 },
     ];
 
     for (const winner of winners) {

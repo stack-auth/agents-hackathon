@@ -1,15 +1,14 @@
-import { query, mutation, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
+import { query, mutation } from "./_generated/server";
 
-type RaceStage = "in_progress" | "judging_1" | "judging_2" | "judging_3" | "break";
+type ContestStage = "in_progress" | "judging_1" | "judging_2" | "judging_3" | "break";
 
-function getExpectedStage(): { stage: RaceStage; timeToNext: number } {
+function getExpectedStage(): { stage: ContestStage; timeToNext: number } {
   const now = new Date();
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
   
   if (minutes >= 5) {
-    // Race in progress (5:00 - 59:59)
+    // Contest in progress (5:00 - 59:59)
     const timeToNext = (60 - minutes) * 60 - seconds;
     return { stage: "in_progress", timeToNext };
   } else if (minutes === 0) {
@@ -31,27 +30,38 @@ function getExpectedStage(): { stage: RaceStage; timeToNext: number } {
   }
 }
 
-export const getCurrentRaceState = query({
+export const getCurrentContestState = query({
   args: {},
   handler: async (ctx) => {
-    const currentState = await ctx.db.query("raceState").first();
+    const skipRecord = await ctx.db.query("contestState").first();
     const expected = getExpectedStage();
     
-    // If no state exists or manual override is not set, use time-based logic
-    if (!currentState || !currentState.manualOverride) {
-      // Return expected state based on time
+    // Check if current stage was skipped
+    if (skipRecord?.skippedStage === expected.stage) {
+      // Return the next stage in sequence, but keep the original timing
+      const stageOrder: ContestStage[] = [
+        "in_progress",
+        "judging_1",
+        "judging_2",
+        "judging_3",
+        "break",
+      ];
+      
+      const currentIndex = stageOrder.indexOf(expected.stage);
+      const nextIndex = (currentIndex + 1) % stageOrder.length;
+      const nextStage = stageOrder[nextIndex];
+      
       return {
-        stage: expected.stage,
+        stage: nextStage,
         timeToNext: expected.timeToNext,
-        manualOverride: false,
+        wasSkipped: true,
       };
     }
     
-    // Return manual override state
     return {
-      stage: currentState.stage,
-      timeToNext: null,
-      manualOverride: true,
+      stage: expected.stage,
+      timeToNext: expected.timeToNext,
+      wasSkipped: false,
     };
   },
 });
@@ -59,9 +69,22 @@ export const getCurrentRaceState = query({
 export const advanceStage = mutation({
   args: {},
   handler: async (ctx) => {
-    const currentState = await ctx.db.query("raceState").first();
+    const expected = getExpectedStage();
     
-    const stageOrder: RaceStage[] = [
+    // Clear any existing skip record
+    const existingRecord = await ctx.db.query("contestState").first();
+    if (existingRecord) {
+      await ctx.db.delete(existingRecord._id);
+    }
+    
+    // Mark current stage as skipped
+    await ctx.db.insert("contestState", {
+      skippedStage: expected.stage,
+      skippedAt: Date.now(),
+    });
+    
+    // Return the stage we're skipping to
+    const stageOrder: ContestStage[] = [
       "in_progress",
       "judging_1",
       "judging_2",
@@ -69,43 +92,20 @@ export const advanceStage = mutation({
       "break",
     ];
     
-    const currentIndex = currentState 
-      ? stageOrder.indexOf(currentState.stage)
-      : -1;
-    
+    const currentIndex = stageOrder.indexOf(expected.stage);
     const nextIndex = (currentIndex + 1) % stageOrder.length;
-    const nextStage = stageOrder[nextIndex];
     
-    if (currentState) {
-      await ctx.db.delete(currentState._id);
-    }
-    
-    await ctx.db.insert("raceState", {
-      stage: nextStage,
-      startedAt: Date.now(),
-      manualOverride: true,
-    });
-    
-    return { stage: nextStage };
+    return { skippedTo: stageOrder[nextIndex] };
   },
 });
 
-export const resetToAutomatic = mutation({
+export const clearSkips = mutation({
   args: {},
   handler: async (ctx) => {
-    const currentState = await ctx.db.query("raceState").first();
-    
-    if (currentState) {
-      await ctx.db.delete(currentState._id);
+    const records = await ctx.db.query("contestState").collect();
+    for (const record of records) {
+      await ctx.db.delete(record._id);
     }
-    
-    const expected = getExpectedStage();
-    await ctx.db.insert("raceState", {
-      stage: expected.stage,
-      startedAt: Date.now(),
-      manualOverride: false,
-    });
-    
-    return { stage: expected.stage };
+    return { cleared: records.length };
   },
 });

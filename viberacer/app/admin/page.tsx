@@ -6,34 +6,34 @@ import { useRouter } from "next/navigation";
 
 export default function AdminPage() {
   const router = useRouter();
-  const raceState = useQuery(api.race.getCurrentRaceState);
+  const contestState = useQuery(api.race.getCurrentContestState);
   const advanceStage = useMutation(api.race.advanceStage);
-  const resetToAutomatic = useMutation(api.race.resetToAutomatic);
+  const clearSkips = useMutation(api.race.clearSkips);
 
   const handleAdvance = async () => {
     await advanceStage();
   };
 
-  const handleReset = async () => {
-    await resetToAutomatic();
+  const handleClearSkips = async () => {
+    await clearSkips();
   };
 
   const getStageInfo = () => {
-    if (!raceState) return "Loading...";
+    if (!contestState) return "Loading...";
     
     const stageNames = {
-      in_progress: "Race In Progress",
+      in_progress: "Contest In Progress",
       judging_1: "Judging - Stage 1",
       judging_2: "Judging - Stage 2",
       judging_3: "Judging - Stage 3",
       break: "Break",
     };
     
-    return stageNames[raceState.stage] || raceState.stage;
+    return stageNames[contestState.stage] || contestState.stage;
   };
 
   const getNextStage = () => {
-    if (!raceState) return "";
+    if (!contestState) return "";
     
     const stageOrder = {
       in_progress: "judging_1",
@@ -43,9 +43,9 @@ export default function AdminPage() {
       break: "in_progress",
     };
     
-    const nextStage = stageOrder[raceState.stage];
+    const nextStage = stageOrder[contestState.stage];
     const stageNames = {
-      in_progress: "Race In Progress",
+      in_progress: "Contest In Progress",
       judging_1: "Judging - Stage 1",
       judging_2: "Judging - Stage 2",
       judging_3: "Judging - Stage 3",
@@ -66,16 +66,16 @@ export default function AdminPage() {
           <div>
             <p className="text-sm text-gray-600 mb-2">Current Stage</p>
             <p className="text-2xl font-bold text-black">{getStageInfo()}</p>
-            {raceState?.manualOverride && (
-              <p className="text-sm text-orange-600 mt-1">⚠️ Manual override active</p>
+            {contestState?.wasSkipped && (
+              <p className="text-sm text-orange-600 mt-1">⚠️ Stage was skipped</p>
             )}
           </div>
           
-          {raceState?.timeToNext !== null && !raceState?.manualOverride && (
+          {contestState && contestState.timeToNext !== null && contestState.timeToNext !== undefined && (
             <div>
               <p className="text-sm text-gray-600 mb-1">Auto-advance in</p>
               <p className="text-xl font-mono text-black">
-                {Math.floor(raceState.timeToNext / 60)}:{String(Math.floor(raceState.timeToNext % 60)).padStart(2, '0')}
+                {Math.floor(contestState.timeToNext / 60)}:{String(Math.floor(contestState.timeToNext % 60)).padStart(2, '0')}
               </p>
             </div>
           )}
@@ -88,20 +88,20 @@ export default function AdminPage() {
               ADVANCE TO: {getNextStage()}
             </button>
             
-            {raceState?.manualOverride && (
+            {contestState?.wasSkipped && (
               <button
-                onClick={handleReset}
+                onClick={handleClearSkips}
                 className="w-full px-6 py-3 bg-gray-600 text-white hover:bg-gray-700 transition-colors"
               >
-                RESET TO AUTOMATIC MODE
+                CLEAR ALL SKIPS
               </button>
             )}
           </div>
           
           <div className="pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600 mb-3">Schedule (automatic mode)</p>
+            <p className="text-sm text-gray-600 mb-3">Schedule</p>
             <div className="space-y-1 text-sm font-mono">
-              <p>:05-:59 — Race in progress</p>
+              <p>:05-:59 — Contest in progress</p>
               <p>:00-:00 — Judging stage 1</p>
               <p>:01-:01 — Judging stage 2</p>
               <p>:02-:02 — Judging stage 3</p>

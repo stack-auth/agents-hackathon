@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as auth from "../auth.js";
+import type * as clearContestState from "../clearContestState.js";
 import type * as clearWinners from "../clearWinners.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
@@ -32,6 +33,7 @@ import type * as winners from "../winners.js";
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  clearContestState: typeof clearContestState;
   clearWinners: typeof clearWinners;
   events: typeof events;
   http: typeof http;

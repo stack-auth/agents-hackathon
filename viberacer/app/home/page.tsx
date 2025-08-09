@@ -10,77 +10,77 @@ export default function HomePage() {
   const lastWinner = useQuery(api.winners.getLastWinner);
   const topWinners = useQuery(api.winners.getWeeklyTopWinners);
   const upcomingEvents = useQuery(api.events.getUpcomingEvents);
-  const raceState = useQuery(api.race.getCurrentRaceState);
+  const contestState = useQuery(api.race.getCurrentContestState);
   const [timeDisplay, setTimeDisplay] = useState("");
   const [canJoin, setCanJoin] = useState(false);
 
   useEffect(() => {
-    if (!raceState || raceState.manualOverride) {
+    if (!contestState) {
       setTimeDisplay("");
       return;
     }
 
     const updateTimer = () => {
-      if (raceState.timeToNext !== null) {
-        const minutes = Math.floor(raceState.timeToNext / 60);
-        const seconds = Math.floor(raceState.timeToNext % 60);
+      if (contestState.timeToNext !== null) {
+        const minutes = Math.floor(contestState.timeToNext / 60);
+        const seconds = Math.floor(contestState.timeToNext % 60);
         setTimeDisplay(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
       }
     };
 
     updateTimer();
     const interval = setInterval(() => {
-      if (raceState.timeToNext !== null && raceState.timeToNext > 0) {
-        raceState.timeToNext--;
+      if (contestState.timeToNext !== null && contestState.timeToNext > 0) {
+        contestState.timeToNext--;
         updateTimer();
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [raceState]);
+  }, [contestState]);
 
   useEffect(() => {
     // Can join if in_progress and within first 15 minutes (from :05 to :20)
-    if (raceState?.stage === "in_progress") {
+    if (contestState?.stage === "in_progress") {
       const now = new Date();
       const minutes = now.getMinutes();
       setCanJoin(minutes >= 5 && minutes < 20);
     } else {
       setCanJoin(false);
     }
-  }, [raceState]);
+  }, [contestState]);
 
   const handleJoin = () => {
     router.push("/competition");
   };
 
   const getStageDisplay = () => {
-    if (!raceState) return { title: "Loading...", subtitle: "" };
+    if (!contestState) return { title: "Loading...", subtitle: "" };
     
-    switch (raceState.stage) {
+    switch (contestState.stage) {
       case "in_progress":
         if (canJoin) {
           return { 
-            title: "Join the race now!", 
+            title: "Join the contest now!", 
             subtitle: ""
           };
         } else {
-          // Calculate time to next race (next hour at :05)
+          // Calculate time to next contest (next hour at :05)
           const now = new Date();
           const minutes = now.getMinutes();
-          let minutesToNext;
+          const seconds = now.getSeconds();
+          let secondsToNext;
           if (minutes < 5) {
-            minutesToNext = 5 - minutes;
+            secondsToNext = (5 - minutes - 1) * 60 + (60 - seconds);
           } else {
-            minutesToNext = 65 - minutes;
+            secondsToNext = (65 - minutes - 1) * 60 + (60 - seconds);
           }
-          const hoursToNext = Math.floor(minutesToNext / 60);
-          const minsToNext = minutesToNext % 60;
-          const timeToNext = hoursToNext > 0 
-            ? `${hoursToNext}:${String(minsToNext).padStart(2, '0')}` 
-            : `0:${String(minsToNext).padStart(2, '0')}`;
+          const hoursToNext = Math.floor(secondsToNext / 3600);
+          const minsToNext = Math.floor((secondsToNext % 3600) / 60);
+          const secsToNext = secondsToNext % 60;
+          const timeToNext = `${hoursToNext}:${String(minsToNext).padStart(2, '0')}:${String(secsToNext).padStart(2, '0')}`;
           return { 
-            title: `NEXT RACE: ${timeToNext}`, 
+            title: `NEXT CONTEST: ${timeToNext}`, 
             subtitle: ""
           };
         }
@@ -101,7 +101,7 @@ export default function HomePage() {
         };
       case "break":
         return { 
-          title: `NEXT RACE: ${timeDisplay || "0:00"}`, 
+          title: `NEXT CONTEST: ${timeDisplay || "0:00"}`, 
           subtitle: ""
         };
       default:
@@ -137,15 +137,10 @@ export default function HomePage() {
               onClick={handleJoin}
               className="mt-4 px-8 py-4 text-lg bg-black text-white hover:bg-gray-900 transition-colors"
             >
-              JOIN RACE
+              JOIN CONTEST
             </button>
           )}
           
-          {raceState?.manualOverride && (
-            <div className="mt-2 text-sm text-orange-600">
-              ⚠️ Manual override active
-            </div>
-          )}
         </div>
       </div>
       
@@ -166,12 +161,12 @@ export default function HomePage() {
                 {lastWinner.name}
               </p>
               <p className="text-lg text-gray-600">
-                {lastWinner.raceHour}
+                {lastWinner.contestHour}
               </p>
             </div>
           ) : (
             <p className="text-2xl font-bold text-black">
-              no races yet
+              no contests yet
             </p>
           )}
         </div>

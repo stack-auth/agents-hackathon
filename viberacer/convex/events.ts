@@ -19,7 +19,7 @@ export const getUpcomingEvents = query({
       const timeString = `${displayHour}:00${period}`;
       
       events.push({
-        type: "normal",
+        type: "standard",
         time: timeString,
       });
     }

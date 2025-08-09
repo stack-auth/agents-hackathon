@@ -13,18 +13,27 @@ export default defineSchema({
   winners: defineTable({
     name: v.string(),
     timestamp: v.number(),
-    raceHour: v.optional(v.string()), // e.g. "3:00am", "11:00pm" - optional for migration
+    contestHour: v.optional(v.string()), // e.g. "3:00am", "11:00pm" - optional for migration
     score: v.optional(v.number()),
   }).index("by_timestamp", ["timestamp"]),
-  raceState: defineTable({
-    stage: v.union(
+  contestState: defineTable({
+    skippedStage: v.optional(v.union(
       v.literal("in_progress"),
       v.literal("judging_1"),
       v.literal("judging_2"),
       v.literal("judging_3"),
       v.literal("break")
-    ),
-    startedAt: v.number(),
+    )),
+    skippedAt: v.optional(v.number()),
+    // Legacy fields for migration
+    stage: v.optional(v.union(
+      v.literal("in_progress"),
+      v.literal("judging_1"),
+      v.literal("judging_2"),
+      v.literal("judging_3"),
+      v.literal("break")
+    )),
+    startedAt: v.optional(v.number()),
     manualOverride: v.optional(v.boolean()),
   }),
 });

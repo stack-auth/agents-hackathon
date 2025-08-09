@@ -67,12 +67,12 @@ export const addWinner = mutation({
     const hour = now.getHours();
     const period = hour >= 12 ? 'pm' : 'am';
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    const raceHour = `${displayHour}:00${period}`;
+    const contestHour = `${displayHour}:00${period}`;
     
     await ctx.db.insert("winners", {
       name: args.name,
       timestamp: Date.now(),
-      raceHour: raceHour,
+      contestHour: contestHour,
       score: args.score,
     });
   },
