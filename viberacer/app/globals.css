@@ -120,3 +120,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Custom utility classes for text stroke effects */
+.text-stroke-yellow {
+  -webkit-text-stroke: 1px yellow;
+  color: transparent;
+}
+
+.text-stroke-white {
+  -webkit-text-stroke: 1px white;
+  color: transparent;
+}
+
+.text-giant {
+  font-size: 100px;
+}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Galaxy from "../../react-bits/background/Galaxy/Galaxy";
+import GlitchText from "../../react-bits/text-animations/GlitchText/GlitchText";
 
 export default function HomePage() {
   const router = useRouter();
@@ -97,11 +98,15 @@ export default function HomePage() {
         
         {/* Main content */}
         <div className="text-center space-y-8 relative z-10">
-          <h1 className="text-7xl font-bold text-white tracking-tight animate-pulse">
+          <GlitchText
+            speed={10}
+            enableShadows={true}
+            enableOnHover={true}
+          >
             VIBERACER
-          </h1>
+          </GlitchText>
           
-          <p className="text-2xl text-gray-300">
+          <p className="text-xl text-gray-300">
             Hourly worldwide hackathons
           </p>
           
@@ -118,7 +123,7 @@ export default function HomePage() {
             {canJoin && (
               <button
                 onClick={handleJoin}
-                className="mt-4 px-10 py-5 text-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 font-bold rounded-lg shadow-2xl"
+                className="mt-4 px-10 py-5 text-xl bg-gradient-to-r bg-white text-black hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 font-bold rounded-lg shadow-2xl"
               >
                 JOIN CONTEST
               </button>
@@ -218,23 +223,23 @@ export default function HomePage() {
           fontFamily: "'Caveat', cursive",
         }}
       >
-        <div className="text-gray-700">
+        <div className="text-gray-300">
           <p className="text-xl mb-2">recent winners:</p>
           {recentWinners && recentWinners.length > 0 ? (
             <div className="space-y-1">
               {recentWinners.map((winner, idx) => (
                 <div key={idx} className="flex gap-4 items-baseline">
-                  <p className="text-xl font-bold text-black">
+                  <p className="text-xl font-bold text-white">
                     {winner.name}
                   </p>
-                  <p className="text-lg text-gray-600">
+                  <p className="text-lg text-gray-400">
                     {winner.contestHour}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xl text-black">
+            <p className="text-xl text-white">
               no contests yet
             </p>
           )}
@@ -248,7 +253,7 @@ export default function HomePage() {
           fontFamily: "'Caveat', cursive",
         }}
       >
-        <div className="text-gray-700">
+        <div className="text-gray-300">
           <p className="text-xl mb-2">top winners (weekly):</p>
           {topWinners && topWinners.length > 0 ? (
             <div className="space-y-1">
@@ -256,10 +261,10 @@ export default function HomePage() {
                 const emoji = idx === 0 ? '👑' : idx === 1 ? '🥈' : '🥉';
                 return (
                   <div key={idx} className="flex gap-4 items-baseline">
-                    <p className="text-xl font-bold text-black">
+                    <p className="text-xl font-bold text-white">
                       {emoji} {winner.name}
                     </p>
-                    <p className="text-lg text-gray-600">
+                    <p className="text-lg text-gray-400">
                       {winner.wins} wins
                     </p>
                   </div>
@@ -267,7 +272,7 @@ export default function HomePage() {
               })}
             </div>
           ) : (
-            <p className="text-xl text-gray-500">loading...</p>
+            <p className="text-xl text-gray-400">loading...</p>
           )}
         </div>
       </div>
@@ -279,23 +284,23 @@ export default function HomePage() {
           fontFamily: "'Caveat', cursive",
         }}
       >
-        <div className="text-gray-700">
+        <div className="text-gray-300">
           <p className="text-xl mb-2">upcoming events:</p>
           {upcomingEvents && upcomingEvents.length > 0 ? (
             <div className="space-y-1">
               {upcomingEvents.map((event, idx) => (
                 <div key={idx} className="flex gap-4 items-baseline">
-                  <p className="text-xl font-bold text-black">
+                  <p className="text-xl font-bold text-white">
                     {event.type}
                   </p>
-                  <p className="text-lg text-gray-600">
+                  <p className="text-lg text-gray-400">
                     {event.time}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xl text-gray-500">loading...</p>
+            <p className="text-xl text-gray-400">loading...</p>
           )}
         </div>
       </div>
