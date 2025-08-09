@@ -11,6 +11,7 @@ export const getCurrentContestState = query({
     
     if (!stageState) {
       // System not initialized yet
+      // Note: Can't use scheduler in queries, would need a mutation
       return {
         stage: "break" as ContestStage,
         timeToNext: 0,
@@ -47,5 +48,21 @@ export const initializeMonitoring = mutation({
     await ctx.scheduler.runAfter(0, internal.stageMonitor.startMonitoring);
     // Return a simple response since we can't directly return the scheduler result
     return { started: true, message: "Monitoring initialization scheduled" };
+  },
+});
+
+// Force a monitoring check (can be called from frontend to ensure monitoring)
+export const forceMonitoringCheck = mutation({
+  args: {},
+  handler: async (ctx): Promise<{ triggered: boolean; lastCheck: number | null }> => {
+    const stageState = await ctx.db.query("stageState").first();
+    
+    // Trigger monitoring check
+    await ctx.scheduler.runAfter(0, internal.stageMonitor.ensureMonitoring);
+    
+    return {
+      triggered: true,
+      lastCheck: stageState?.lastCheckedTime || null,
+    };
   },
 });

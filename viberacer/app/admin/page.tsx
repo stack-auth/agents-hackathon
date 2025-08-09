@@ -110,17 +110,6 @@ export default function AdminPage() {
                 START MONITORING (if not running)
               </button>
             </div>
-            
-            <div className="pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600 mb-3">Schedule</p>
-              <div className="space-y-1 text-sm font-mono">
-                <p>:05-:41 — Contest in progress</p>
-                <p>:41-:01 — Judging stage 1</p>
-                <p>:01-:02 — Judging stage 2</p>
-                <p>:02-:03 — Judging stage 3</p>
-                <p>:03-:05 — Break</p>
-              </div>
-            </div>
           </div>
           
           {/* System Information Panel */}

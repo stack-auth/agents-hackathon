@@ -19,6 +19,8 @@ import type * as clearContestState from "../clearContestState.js";
 import type * as clearWinners from "../clearWinners.js";
 import type * as config from "../config.js";
 import type * as contestConfig from "../contestConfig.js";
+import type * as contestHelpers from "../contestHelpers.js";
+import type * as crons from "../crons.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
@@ -27,6 +29,7 @@ import type * as race from "../race.js";
 import type * as seed from "../seed.js";
 import type * as stageHandlers from "../stageHandlers.js";
 import type * as stageMonitor from "../stageMonitor.js";
+import type * as submissions from "../submissions.js";
 import type * as winners from "../winners.js";
 
 /**
@@ -44,6 +47,8 @@ declare const fullApi: ApiFromModules<{
   clearWinners: typeof clearWinners;
   config: typeof config;
   contestConfig: typeof contestConfig;
+  contestHelpers: typeof contestHelpers;
+  crons: typeof crons;
   events: typeof events;
   http: typeof http;
   init: typeof init;
@@ -52,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   stageHandlers: typeof stageHandlers;
   stageMonitor: typeof stageMonitor;
+  submissions: typeof submissions;
   winners: typeof winners;
 }>;
 export declare const api: FilterApi<

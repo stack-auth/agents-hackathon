@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import GlitchText from "../../react-bits/text-animations/GlitchText/GlitchText";
+import { downloadICS } from "../utils/icsGenerator";
 
 export default function HomePage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function HomePage() {
   const topWinners = useQuery(api.winners.getWeeklyTopWinners);
   const upcomingEvents = useQuery(api.events.getUpcomingEvents);
   const contestState = useQuery(api.race.getCurrentContestState);
+  const contestConfig = useQuery(api.config.getContestConfig);
   const [canJoin, setCanJoin] = useState(false);
   const [, setTick] = useState(0);
 
@@ -26,20 +28,31 @@ export default function HomePage() {
 
   useEffect(() => {
     // Can join based on config settings
+    if (!contestConfig || !contestState) {
+      setCanJoin(false);
+      return;
+    }
+    
     const now = new Date();
     const minutes = now.getMinutes();
     
-    if (contestState?.stage === "in_progress") {
-      // Can join in first 15 minutes of contest (configurable)
-      // Config: from :05 to :20 by default
-      setCanJoin(minutes >= 5 && minutes < 20);
-    } else if (["judging_1", "judging_2", "judging_3", "break"].includes(contestState?.stage || "")) {
-      // Can join during judging or break stages (configurable)
+    if (contestState.stage === "in_progress") {
+      // Can join in first X minutes of contest (from config)
+      const joinEndMinute = (contestConfig.stages.in_progress.startMinute + contestConfig.joinWindow.durationMinutes) % 60;
+      
+      if (joinEndMinute < contestConfig.stages.in_progress.startMinute) {
+        // Join window wraps around hour
+        setCanJoin(minutes >= contestConfig.stages.in_progress.startMinute || minutes < joinEndMinute);
+      } else {
+        setCanJoin(minutes >= contestConfig.stages.in_progress.startMinute && minutes < joinEndMinute);
+      }
+    } else if (contestConfig.joinWindow.alwaysJoinableStages.includes(contestState.stage)) {
+      // Can join during specified stages (from config)
       setCanJoin(true);
     } else {
       setCanJoin(false);
     }
-  }, [contestState]);
+  }, [contestState, contestConfig]);
 
   const handleJoin = () => {
     router.push("/compete");
@@ -60,16 +73,15 @@ export default function HomePage() {
     const secsToNext = secondsToNextHour % 60;
     const countdownTime = `${String(hoursToNext).padStart(2, '0')}:${String(minsToNext).padStart(2, '0')}:${String(secsToNext).padStart(2, '0')}`;
     
-    // Get the next hour time display
-    const nextHour = (currentHour + 1) % 24;
-    const period = nextHour >= 12 ? 'pm' : 'am';
-    const displayHour = nextHour === 0 ? 12 : nextHour > 12 ? nextHour - 12 : nextHour;
-    const nextContestTime = `${displayHour}:00${period}`;
+    // Get the next hour time display (removed - not used)
     
     // Calculate how long ago contest started (for in_progress stage)
     let minutesAgo = 0;
-    if (contestState?.stage === "in_progress" && currentMinutes >= 5) {
-      minutesAgo = currentMinutes - 5;
+    if (contestState?.stage === "in_progress" && contestConfig) {
+      const startMinute = contestConfig.stages.in_progress.startMinute;
+      if (currentMinutes >= startMinute) {
+        minutesAgo = currentMinutes - startMinute;
+      }
     }
     
     const nextContestTitle = canJoin && contestState.stage === "in_progress" 
@@ -155,7 +167,11 @@ export default function HomePage() {
             </div>
             <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl">
               <div className="text-4xl mb-4">⏱️</div>
-              <h3 className="text-2xl font-bold mb-3">36 Minutes</h3>
+              <h3 className="text-2xl font-bold mb-3">
+                {contestConfig ? 
+                  `${(contestConfig.stages.judging_1.startMinute || 60) - contestConfig.stages.in_progress.startMinute} Minutes` 
+                  : "36 Minutes"}
+              </h3>
               <p className="text-gray-300">Pure coding adrenaline. No time for overthinking. Just ship it.</p>
             </div>
           </div>
@@ -170,28 +186,36 @@ export default function HomePage() {
             <div className="flex items-center space-x-6">
               <div className="text-3xl font-bold bg-white/20 w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0">1</div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">:05 - Contest Starts</h3>
+                <h3 className="text-2xl font-bold mb-2">
+                  :{String(contestConfig?.stages.in_progress.startMinute || 5).padStart(2, '0')} - Contest Starts
+                </h3>
                 <p className="text-gray-300">Challenge drops. Timer starts. Code like your life depends on it.</p>
               </div>
             </div>
             <div className="flex items-center space-x-6">
               <div className="text-3xl font-bold bg-white/20 w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0">2</div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">:41 - Pencils Down</h3>
+                <h3 className="text-2xl font-bold mb-2">
+                  :{String(contestConfig?.stages.judging_1.startMinute || 0).padStart(2, '0')} - Pencils Down
+                </h3>
                 <p className="text-gray-300">Code submission closes. Your masterpiece is locked in.</p>
               </div>
             </div>
             <div className="flex items-center space-x-6">
               <div className="text-3xl font-bold bg-white/20 w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0">3</div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">:41-:44 - Judging</h3>
+                <h3 className="text-2xl font-bold mb-2">
+                  :{String(contestConfig?.stages.judging_1.startMinute || 0).padStart(2, '0')}-:{String(contestConfig?.stages.break.startMinute || 3).padStart(2, '0')} - Judging
+                </h3>
                 <p className="text-gray-300">AI judges evaluate speed, creativity, and code quality.</p>
               </div>
             </div>
             <div className="flex items-center space-x-6">
               <div className="text-3xl font-bold bg-white/20 w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0">4</div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">:44 - Winner Crowned</h3>
+                <h3 className="text-2xl font-bold mb-2">
+                  :{String(contestConfig?.stages.break.startMinute || 3).padStart(2, '0')} - Winner Crowned
+                </h3>
                 <p className="text-gray-300">Glory, fame, and eternal bragging rights.</p>
               </div>
             </div>
@@ -288,7 +312,12 @@ export default function HomePage() {
           {upcomingEvents && upcomingEvents.length > 0 ? (
             <div className="space-y-1">
               {upcomingEvents.map((event, idx) => (
-                <div key={idx} className="flex gap-4 items-baseline">
+                <div 
+                  key={idx} 
+                  className="flex gap-4 items-baseline px-2 py-1 -mx-2 rounded cursor-pointer transition-colors hover:bg-white/10"
+                  onClick={() => downloadICS(`Viberacer ${event.type}`, event.time)}
+                  title="Click to add to calendar"
+                >
                   <p className="text-xl font-bold text-white">
                     {event.type}
                   </p>

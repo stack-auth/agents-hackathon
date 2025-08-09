@@ -96,7 +96,7 @@ function getExpectedStageForTime(now: Date): ContestStage {
   return "break";
 }
 
-// Check and update stage if needed (called every second)
+// Check and update stage if needed (called periodically)
 export const checkAndUpdateStage = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -121,14 +121,16 @@ export const checkAndUpdateStage = internalMutation({
       await ctx.db.insert("stageState", newState);
       console.log(`[Stage Monitor] Initialized - Stage: ${currentStage}, Next transition: ${new Date(nextStageTime).toISOString()}`);
       
-      // Schedule next check in 1 second
-      await ctx.scheduler.runAfter(1000, internal.stageMonitor.checkAndUpdateStage);
+      // Schedule next check batch
+      await scheduleNextChecks(ctx);
       return;
     }
     
-    // Log current state
+    // Log current state (less verbose - only log every 10 seconds)
     const timeToNext = Math.max(0, Math.floor((stageState.nextStageTime - nowTimestamp) / 1000));
-    console.log(`[Stage Check] Time: ${now.toISOString().split('T')[1].split('.')[0]}, Stage: ${stageState.currentStage}, Next in: ${timeToNext}s, Skipped: ${stageState.wasSkipped}`);
+    if (nowTimestamp - stageState.lastCheckedTime > 9000) {
+      console.log(`[Stage Check] Time: ${now.toISOString().split('T')[1].split('.')[0]}, Stage: ${stageState.currentStage}, Next in: ${timeToNext}s, Skipped: ${stageState.wasSkipped}`);
+    }
     
     // Check if it's time to transition to next stage
     if (nowTimestamp >= stageState.nextStageTime && !stageState.wasSkipped) {
@@ -168,8 +170,40 @@ export const checkAndUpdateStage = internalMutation({
       });
     }
     
-    // Schedule next check in 1 second
-    await ctx.scheduler.runAfter(1000, internal.stageMonitor.checkAndUpdateStage);
+    // Schedule next check batch
+    await scheduleNextChecks(ctx);
+  },
+});
+
+// Helper to schedule multiple checks to ensure continuity
+async function scheduleNextChecks(ctx: any) {
+  // Schedule multiple checks at different intervals to ensure at least one runs
+  // This creates redundancy in case one fails
+  await ctx.scheduler.runAfter(1000, internal.stageMonitor.checkAndUpdateStage);  // 1 second
+  await ctx.scheduler.runAfter(5000, internal.stageMonitor.ensureMonitoring);      // 5 seconds (backup)
+  await ctx.scheduler.runAfter(30000, internal.stageMonitor.ensureMonitoring);     // 30 seconds (deep backup)
+}
+
+// Ensure monitoring is running (can be called anytime to restart)
+export const ensureMonitoring = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const stageState = await ctx.db.query("stageState").first();
+    
+    if (!stageState) {
+      // Not initialized, start monitoring
+      console.log("[Monitor Health] Starting monitoring - not initialized");
+      await ctx.scheduler.runAfter(0, internal.stageMonitor.checkAndUpdateStage);
+      return;
+    }
+    
+    // Check if monitoring is stale (hasn't checked in last 10 seconds)
+    const timeSinceLastCheck = (now - stageState.lastCheckedTime) / 1000;
+    if (timeSinceLastCheck > 10) {
+      console.log(`[Monitor Health] Restarting monitoring - last check was ${Math.floor(timeSinceLastCheck)}s ago`);
+      await ctx.scheduler.runAfter(0, internal.stageMonitor.checkAndUpdateStage);
+    }
   },
 });
 

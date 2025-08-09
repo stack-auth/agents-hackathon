@@ -1,22 +1,27 @@
 import { internalMutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { 
+  prepareContestForJudging,
+  getCurrentContestId 
+} from "./contestHelpers";
 
 type ContestStage = "in_progress" | "judging_1" | "judging_2" | "judging_3" | "break";
+
+// KEEP THIS FILE CLEAN. KEEP OPERATIONS THAT CAN BE EXTRACTED INTO FUNCTIONS IN OTHER FILES, AND USE THEM HERE. IT SHOULD BE EASY TO READ AND UNDERSTAND THIS FILE.
 
 /**
  * Stage transition handlers - called when a stage ends
  * Edit this file to add custom logic when stages complete
  */
 const stageEndHandlers: Record<ContestStage, (ctx: any) => Promise<void>> = {
-  // Called when contest ends (at :00)
+  // Called when contest ends (at :41)
   in_progress: async (ctx) => {
-    console.log("Contest ended, starting judging phase");
-    
-    // TODO: Add your contest end logic here
-    // Examples:
-    // - Lock submissions
-    // - Start automated testing
-    // - Notify judges
+    const contestId = getCurrentContestId();
+    console.log(`Contest ${contestId} ended, starting judging phase`);
+        
+    // Prepare for judging
+    const submissions = await prepareContestForJudging(ctx.db);
+    console.log(`${submissions.length} submissions ready for judging`);
   },
 
   // Called when judging stage 1 ends (at :01)
