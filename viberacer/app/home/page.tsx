@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import Galaxy from "../../react-bits/background/Galaxy/Galaxy";
 
 export default function HomePage() {
   const router = useRouter();
@@ -89,6 +90,16 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col items-center justify-center font-mono relative">
+      {/*<div style={{ inset: 0, position: 'absolute' }}>
+        <Galaxy
+          mouseRepulsion={true}
+          mouseInteraction={true}
+          density={0.1}
+          glowIntensity={0.1}
+          starSpeed={0.01}
+          transparent={true}
+        />
+      </div>*/}
       <div className="text-center space-y-8">
         <h1 className="text-6xl font-normal text-black tracking-tight">
           VIBERACER
