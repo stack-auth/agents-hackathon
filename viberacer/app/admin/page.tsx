@@ -41,7 +41,7 @@ export default function AdminPage() {
       break: "Break",
     };
     
-    return stageNames[adminData.currentStage] || adminData.currentStage;
+    return stageNames[adminData.currentStage as keyof typeof stageNames] || adminData.currentStage;
   };
 
   const getNextStage = () => {
@@ -55,7 +55,7 @@ export default function AdminPage() {
       break: "Break",
     };
     
-    return stageNames[adminData.nextStage] || adminData.nextStage;
+    return stageNames[adminData.nextStage as keyof typeof stageNames] || adminData.nextStage;
   };
   
   const getHealthColor = () => {
@@ -133,7 +133,7 @@ export default function AdminPage() {
               </p>
               {adminData?.lastCheckAgo !== null && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Last check: {adminData.lastCheckAgo}s ago
+                  Last check: {adminData?.lastCheckAgo}s ago
                 </p>
               )}
             </div>
