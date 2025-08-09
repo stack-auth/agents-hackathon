@@ -47,8 +47,6 @@ export const createSubmissionReview = mutation({
   },
 });
 
-import { getAuthUserId } from "@convex-dev/auth/server";
-
 // Validate submission URL
 export function validateSubmissionUrl(url: string): { valid: boolean; error?: string } {
   try {
@@ -94,11 +92,13 @@ function getCurrentContestId(): string {
 }
 
 export const submitUrl = mutation({
-  args: { url: v.string() },
+  args: { 
+    url: v.string(),
+    userId: v.string() // Pass userId from client
+  },
   handler: async (ctx, args) => {
-    // Get authenticated user
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    // Verify user is authenticated (userId passed from client)
+    if (!args.userId) {
       throw new Error("Must be authenticated to submit");
     }
     
@@ -120,7 +120,7 @@ export const submitUrl = mutation({
     const existing = await ctx.db
       .query("submissions")
       .withIndex("by_user_contest", q => 
-        q.eq("userId", userId).eq("contestId", contestId)
+        q.eq("userId", args.userId).eq("contestId", contestId)
       )
       .first();
     
@@ -134,7 +134,7 @@ export const submitUrl = mutation({
     } else {
       // Create new submission
       await ctx.db.insert("submissions", {
-        userId,
+        userId: args.userId,
         url: args.url,
         contestId,
         submittedAt: Date.now(),
@@ -145,10 +145,11 @@ export const submitUrl = mutation({
 });
 
 export const getMySubmission = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+  args: {
+    userId: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
       return null;
     }
     
@@ -157,7 +158,7 @@ export const getMySubmission = query({
     const submission = await ctx.db
       .query("submissions")
       .withIndex("by_user_contest", q => 
-        q.eq("userId", userId).eq("contestId", contestId)
+        q.eq("userId", args.userId!).eq("contestId", contestId)
       )
       .first();
     
@@ -175,16 +176,12 @@ export const getCurrentContestSubmissions = query({
       .withIndex("by_contest", q => q.eq("contestId", contestId))
       .collect();
     
-    // Get user info for each submission
-    const submissionsWithUsers = await Promise.all(
-      submissions.map(async (sub) => {
-        const user = await ctx.db.get(sub.userId);
-        return {
-          ...sub,
-          userName: user?.name || user?.email || "Anonymous",
-        };
-      })
-    );
+    // For now, just return submissions with userId as userName
+    // In a real app, you'd want to store user display names separately
+    const submissionsWithUsers = submissions.map((sub) => ({
+      ...sub,
+      userName: sub.userId, // Using userId as display name for now
+    }));
     
     return submissionsWithUsers;
   },

@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { useUser } from "@stackframe/stack";
 
 export default function HackPage() {
   const router = useRouter();
   const contestState = useQuery(api.race.getCurrentContestState);
-  const currentUser = useQuery(api.auth.currentUser);
-  const mySubmission = useQuery(api.submissions.getMySubmission);
+  const user = useUser({ or: "redirect" });
+  const mySubmission = useQuery(api.submissions.getMySubmission, { userId: user?.id || undefined });
   const submitUrl = useMutation(api.submissions.submitUrl);
   
   const [url, setUrl] = useState("");
@@ -33,11 +34,11 @@ export default function HackPage() {
   
   // Redirect to auth if not authenticated
   useEffect(() => {
-    if (currentUser === null) {
+    if (user === null) {
       // User is not authenticated - redirect to sign in page
-      router.push("/signin");
+      router.push("/handler/sign-in");
     }
-  }, [currentUser, router]);
+  }, [user, router]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +47,10 @@ export default function HackPage() {
     setSubmitting(true);
     
     try {
-      const result = await submitUrl({ url });
+      if (!user?.id) {
+        throw new Error("Not authenticated");
+      }
+      const result = await submitUrl({ url, userId: user.id });
       setSuccess(true);
       if (result.updated) {
         setTimeout(() => setSuccess(false), 3000);
@@ -59,7 +63,7 @@ export default function HackPage() {
   };
   
   // Show loading state
-  if (!contestState || currentUser === undefined) {
+  if (!contestState || user === undefined) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
         <p className="text-xl">Loading...</p>
@@ -68,7 +72,7 @@ export default function HackPage() {
   }
   
   // Show auth required
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
         <div className="text-center">

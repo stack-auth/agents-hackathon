@@ -1,12 +1,10 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 // The schema is normally optional, but Convex Auth
 // requires indexes defined on `authTables`.
 // The schema provides more precise TypeScript types.
 export default defineSchema({
-  ...authTables,
   numbers: defineTable({
     value: v.number(),
   }),
@@ -76,7 +74,7 @@ export default defineSchema({
     wasSkipped: v.boolean(), // Whether current stage was manually skipped
   }),
   submissions: defineTable({
-    userId: v.id("users"),
+    userId: v.string(), // Stack Auth user ID
     url: v.string(),
     contestId: v.string(), // Format: "YYYY-MM-DD-HH" for the hour the contest started
     submittedAt: v.number(), // Unix timestamp

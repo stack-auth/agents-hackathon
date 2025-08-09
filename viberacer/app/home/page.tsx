@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import GlitchText from "../../react-bits/text-animations/GlitchText/GlitchText";
 import { downloadICS } from "../utils/icsGenerator";
+import { useUser } from "@stackframe/stack";
 
 export default function HomePage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function HomePage() {
   const upcomingEvents = useQuery(api.events.getUpcomingEvents);
   const contestState = useQuery(api.race.getCurrentContestState);
   const contestConfig = useQuery(api.config.getContestConfig);
-  const currentUser = useQuery(api.auth.currentUser);
+  const user = useUser();
   const [canJoin, setCanJoin] = useState(false);
   const [, setTick] = useState(0);
 
@@ -179,7 +180,7 @@ export default function HomePage() {
               </h3>
               <p className="text-gray-300">Pure coding adrenaline. No time for overthinking. Just ship it.</p>
             </div>
-          </div>
+          </div>$
         </div>
       </section>
 
@@ -307,13 +308,13 @@ export default function HomePage() {
       
       {/* Welcome Message or Sign In - Top Right (above upcoming events) */}
       <div className="fixed top-8 right-8 font-mono">
-        {currentUser ? (
+        {user ? (
           <p className="text-sm text-gray-300">
-            Welcome back, {currentUser.name || currentUser.email?.split('@')[0] || 'friend'}!
+            Welcome back, {user.displayName || user.primaryEmail?.split('@')[0] || 'friend'}!
           </p>
         ) : (
           <button
-            onClick={() => router.push('/signin')}
+            onClick={() => router.push('/handler/sign-in')}
             className="text-sm text-gray-300 hover:text-white transition-colors cursor-pointer"
           >
             Sign in to compete →
