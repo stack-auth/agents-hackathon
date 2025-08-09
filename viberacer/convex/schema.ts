@@ -53,4 +53,8 @@ export default defineSchema({
     startedAt: v.optional(v.number()),
     manualOverride: v.optional(v.boolean()),
   }),
+  submission: defineTable({
+    repoId: v.string(),
+    timestamp: v.number(),
+  }),
 });

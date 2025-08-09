@@ -11,9 +11,10 @@ import FreestylePreview from "@/components/FreestylePreview";
 import { useChat } from "@ai-sdk/react";
 import { useState } from "react";
 import { DefaultChatTransport } from "ai";
+import { Button } from "@/components/ui/button";
+import { useAISDKRuntime } from "@assistant-ui/react-ai-sdk";
+import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { Thread } from "@/components/assistant-ui/thread";
-import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react"
-import { useVercelUseChatRuntime } from "@assistant-ui/react-ai-sdk";
 
 
 
@@ -28,42 +29,26 @@ export default function CompeteWithRepo() {
         }),
     });
 
-    const runtime = useVercelUseChatRuntime(chat);
+    const handleSubmit = () => {
+        console.log("submit");
+    }
+
+    const runtime = useAISDKRuntime(chat);
 
     return (
         <div className="h-[calc(100vh-0px)] w-full">
             <ResizablePanelGroup direction="horizontal">
                 <ResizablePanel defaultSize={30} minSize={20} className="border-r">
-                    <div className="flex h-full flex-col">
-                        <div className="px-4 py-3 border-b">
-                            <h2 className="text-sm font-medium">Chat</h2>
+                    <AssistantRuntimeProvider runtime={runtime}>
+                        <div className="h-full flex flex-col">
+                            <div className="px-4 py-3 border-b flex justify-end">
+                                <Button onClick={handleSubmit}>Submit Project</Button>
+                            </div>
+                            <div className="flex-grow h-0">
+                                <Thread />
+                            </div>
                         </div>
-                        <div className="flex-1 overflow-auto p-4 space-y-3">
-                            {chat.messages.map(message => (
-                                <div key={message.id}>
-                                    {message.role === 'user' ? 'User: ' : 'AI: '}
-                                    {message.parts.map((part, index) =>
-                                        part.type === 'text' ? <span key={index}>{part.text}</span> : null,
-                                    )}
-                                </div>
-                            ))}
-                            {chat.error && <div className="text-red-500">{chat.error.message}</div>}
-                        </div>
-                        <div className="p-3 border-t">
-                            <input
-                                value={input}
-                                className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-zinc-400 dark:border-zinc-800"
-                                placeholder="Send a message..."
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        setInput("");
-                                        chat.sendMessage({ text: input });
-                                    }
-                                }}
-                            />
-                        </div>
-                    </div>
+                    </AssistantRuntimeProvider>
                 </ResizablePanel>
                 <ResizableHandle />
                 <ResizablePanel defaultSize={70} minSize={40}>

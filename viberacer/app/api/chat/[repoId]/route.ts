@@ -1,6 +1,5 @@
 import { openai } from '@ai-sdk/openai';
 import {
-  convertToModelMessages,
   streamText,
   UIMessage,
   experimental_createMCPClient as createMCPClient,
@@ -25,23 +24,14 @@ export async function POST(req: Request) {
 
   const data: { messages: UIMessage[] } = await req.json();
   console.log(data);
-  try {
-    const result = streamText({
-      stopWhen: ({ steps }) => {
-        const lastStep = steps[steps.length - 1];
-        if (lastStep.toolCalls.length > 0) {
-          return false;
-        }
-        return true;
-      },
-      model: openai('gpt-4o'),
-      system: 'You are a helpful assistant.',
-      messages: convertToCoreMessages(data.messages),
-      tools,
-    });
-    return result.toUIMessageStreamResponse();
-  } catch (e) {
-    console.error(e);
-    return new Response(JSON.stringify({ error: e }), { status: 500 });
-  }
+  const result = streamText({
+    stopWhen: ({ steps }) => {
+      return false;
+    },
+    model: openai('gpt-4o'),
+    system: 'Your job is to help the user build a project of their choice. Use Next.js, Tailwind CSS, and Shadcn UI to build the project. Use the tools provided to read and edit the project files instead of asking the user for information.',
+    messages: convertToCoreMessages(data.messages),
+    tools,
+  });
+  return result.toUIMessageStreamResponse();
 }
