@@ -75,7 +75,9 @@ export default function HomePage() {
     const secsToNext = secondsToNextHour % 60;
     const countdownTime = `${String(hoursToNext).padStart(2, '0')}:${String(minsToNext).padStart(2, '0')}:${String(secsToNext).padStart(2, '0')}`;
     
-    // Get the next hour time display (removed - not used)
+    // Get the next hour time display
+    const nextContest = new Date(now.getTime() + hoursToNext * 3600000 + minsToNext * 60000 + secsToNext * 1000);
+    const nextContestTime = nextContest.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     
     // Calculate how long ago contest started (for in_progress stage)
     let minutesAgo = 0;
@@ -97,6 +99,7 @@ export default function HomePage() {
     return {
       title: nextContestTitle,
       subtitle: subtitle,
+      joinTime: nextContestTime,
     };
   };
 
@@ -142,7 +145,7 @@ export default function HomePage() {
               </button>
             ) : contestConfig && !canJoin ? (
               <p className="text-sm text-gray-500 mt-4">
-                You'll be able to join from this page at :{String(contestConfig.stages.in_progress.startMinute).padStart(2, '0')}
+                You'll be able to join from this page at {stageInfo.joinTime}
               </p>
             ) : null}
           </div>
