@@ -26,10 +26,13 @@ import { useRouter } from "next/navigation";
 import { useAISDKRuntime } from "@assistant-ui/react-ai-sdk";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { Thread } from "@/components/assistant-ui/thread";
+import { useStackApp } from "@stackframe/stack";
 
 
 
 export default function CompeteWithRepo() {
+  const stack = useStackApp();
+  const { id: userId } = stack.useUser({ or: "redirect" });
   const params = useParams<{ repoId: string }>();
   const [username, setUsername] = useState("");
   const [open, setOpen] = useState(false);
@@ -49,8 +52,7 @@ export default function CompeteWithRepo() {
   };
 
   const handleDialogSubmit = async () => {
-    if (!username.trim()) return;
-    await createSubmission({ repoId, username: username.trim() });
+    await createSubmission({ repoId, userId });
     setOpen(false);
     router.push(`/judge/${repoId}`);
   };
@@ -89,25 +91,16 @@ export default function CompeteWithRepo() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Enter a username</DialogTitle>
+            <DialogTitle>Ready to submit?</DialogTitle>
             <DialogDescription>
-              We’ll show this on the leaderboard.
+              You'll move on to the judging phase after submitting.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Your username"
-              className="w-full rounded-md border px-3 py-2 text-sm"
-            />
-          </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleDialogSubmit} disabled={!username.trim()}>
+            <Button onClick={handleDialogSubmit}>
               Submit
             </Button>
           </DialogFooter>

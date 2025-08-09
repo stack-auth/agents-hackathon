@@ -14,10 +14,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useStackApp } from "@stackframe/stack";
 
 type RatingState = Record<string, number | null>; // repoId -> rating or null
 
 export default function JudgePage() {
+  const stack = useStackApp();
+  const { id: userId } = stack.useUser({ or: "redirect" });
   const params = useParams<{ repoId: string }>();
   const currentRepoId = params?.repoId ?? "";
   const [selectedRepoForRating, setSelectedRepoForRating] = useState<string | null>(null);
@@ -51,7 +54,7 @@ export default function JudgePage() {
 
   const handleSubmitRating = async () => {
     if (!selectedRepoForRating || tempRating < 1 || tempRating > 5) return;
-    await createReview({ repoId: selectedRepoForRating, rating: tempRating });
+    await createReview({ userId, repoId: selectedRepoForRating, rating: tempRating });
     setRatings((prev) => ({ ...prev, [selectedRepoForRating]: tempRating }));
     setSelectedRepoForRating(null);
   };
@@ -63,7 +66,7 @@ export default function JudgePage() {
       <div className="text-sm text-zinc-600 text-center">
         {allCompleted
           ? "All reviews completed!"
-          : "Please review these 4 projects to complete your submission"}
+          : "Please review all these projects to complete your submission"}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
