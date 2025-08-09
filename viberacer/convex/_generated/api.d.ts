@@ -13,12 +13,14 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as admin from "../admin.js";
 import type * as adminData from "../adminData.js";
 import type * as clearContestState from "../clearContestState.js";
 import type * as clearWinners from "../clearWinners.js";
 import type * as config from "../config.js";
 import type * as contestConfig from "../contestConfig.js";
 import type * as contestHelpers from "../contestHelpers.js";
+import type * as contests from "../contests.js";
 import type * as crons from "../crons.js";
 import type * as events from "../events.js";
 import type * as init from "../init.js";
@@ -38,12 +40,14 @@ import type * as winners from "../winners.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   adminData: typeof adminData;
   clearContestState: typeof clearContestState;
   clearWinners: typeof clearWinners;
   config: typeof config;
   contestConfig: typeof contestConfig;
   contestHelpers: typeof contestHelpers;
+  contests: typeof contests;
   crons: typeof crons;
   events: typeof events;
   init: typeof init;
