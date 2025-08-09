@@ -12,7 +12,7 @@ export default function CompetePage() {
 
   const createRepoAndRedirect = async () => {
     const repoId = await createRepo();
-    router.push(`/compete/${repoId}`);
+    router.push(`/hack/${repoId}`);
   }
   
   // Redirect to /compete/{repoId} if in_progress

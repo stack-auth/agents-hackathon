@@ -25,6 +25,7 @@ export function FreestylePreview({ repoId, className }: FreestylePreviewProps) {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
+    if (!repoId) return;
     let isMounted = true;
     async function ensureDevServer() {
       try {
