@@ -34,17 +34,12 @@ export default function CompeteWithRepo() {
         <div className="h-[calc(100vh-0px)] w-full">
             <ResizablePanelGroup direction="horizontal">
                 <ResizablePanel defaultSize={30} minSize={20} className="border-r">
-                    <AssistantRuntimeProvider runtime={runtime}>
-                        <Thread />
-                    </AssistantRuntimeProvider>
-                </ResizablePanel>
-                {/* <ResizablePanel defaultSize={30} minSize={20} className="border-r">
                     <div className="flex h-full flex-col">
                         <div className="px-4 py-3 border-b">
                             <h2 className="text-sm font-medium">Chat</h2>
                         </div>
                         <div className="flex-1 overflow-auto p-4 space-y-3">
-                            {messages.map(message => (
+                            {chat.messages.map(message => (
                                 <div key={message.id}>
                                     {message.role === 'user' ? 'User: ' : 'AI: '}
                                     {message.parts.map((part, index) =>
@@ -52,7 +47,7 @@ export default function CompeteWithRepo() {
                                     )}
                                 </div>
                             ))}
-                            {error && <div className="text-red-500">{error.message}</div>}
+                            {chat.error && <div className="text-red-500">{chat.error.message}</div>}
                         </div>
                         <div className="p-3 border-t">
                             <input
@@ -63,13 +58,13 @@ export default function CompeteWithRepo() {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                         setInput("");
-                                        sendMessage({ text: input });
+                                        chat.sendMessage({ text: input });
                                     }
                                 }}
                             />
                         </div>
                     </div>
-                </ResizablePanel> */}
+                </ResizablePanel>
                 <ResizableHandle />
                 <ResizablePanel defaultSize={70} minSize={40}>
                     <FreestylePreview repoId={repoId} className="h-full w-full" />
