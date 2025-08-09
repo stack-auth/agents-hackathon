@@ -4,17 +4,27 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useEffect } from "react";
+import { createRepo } from "@/lib/create-repo";
 
 export default function CompetePage() {
   const router = useRouter();
   const contestState = useQuery(api.race.getCurrentContestState);
+
+  const createRepoAndRedirect = async () => {
+    const repoId = await createRepo();
+    router.push(`/compete/${repoId}`);
+  }
   
-  // Redirect to /hack if in_progress
+  // Redirect to /compete/{repoId} if in_progress
   useEffect(() => {
     if (contestState && contestState.stage === "in_progress") {
-      router.push("/hack");
+      createRepoAndRedirect();
     }
   }, [contestState, router]);
+
+  if (contestState && contestState.stage === "in_progress") {
+    return <div>Creating repo...</div>
+  }
   
   const getStageDisplay = () => {
     if (!contestState) return { title: "Loading...", message: "" };

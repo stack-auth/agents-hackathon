@@ -1,3 +1,4 @@
+"use server";
 import { freestyle } from "@/lib/freestyle";
 
 export async function createRepo({
