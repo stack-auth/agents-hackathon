@@ -1,5 +1,4 @@
 import { internalMutation } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
 import { prepareContestForJudging } from "./contestHelpers";
 import { createJudgingAssignments } from "./judgingAssignments";
 

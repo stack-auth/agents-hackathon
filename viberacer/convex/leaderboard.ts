@@ -21,67 +21,55 @@ export const getContestLeaderboard = query({
     contestId: v.id("contests"),
   },
   handler: async (ctx, args) => {
-    // Get all submissions for this contest
-    const submissions = await ctx.db
-      .query("submission")
-      .withIndex("by_contest", (q: any) => q.eq("contestId", args.contestId))
-      .collect();
+    return await calculateLeaderboard(ctx, args.contestId);
+  },
+});
+
+/**
+ * Get the winner (top scorer) of a contest
+ */
+export const calculateLeaderboard = async (ctx: any, contestId: any) => {
+  // Get all submissions for this contest
+  const submissions = await ctx.db
+    .query("submission")
+    .withIndex("by_contest", (q: any) => q.eq("contestId", contestId))
+    .collect();
+  
+  // Get all reviews for this contest (across all stages)
+  const allReviews = await ctx.db
+    .query("submissionReview")
+    .withIndex("by_contest", (q: any) => q.eq("contestId", contestId))
+    .collect();
+  
+  // Get all judging assignments to check completion
+  const assignments = await ctx.db
+    .query("judgingAssignments")
+    .withIndex("by_contest_judge", (q: any) => q.eq("contestId", contestId))
+    .collect();
+  
+  // Calculate scores for each user
+  const userScores = new Map<string, {
+    userId: string,
+    totalScore: number,
+    reviewsReceived: number,
+    submissionCount: number,
+    reviewsGiven: number,
+    assignmentsCompleted: number,
+    totalAssignments: number,
+  }>();
+  
+  // Process submissions and their reviews
+  for (const submission of submissions) {
+    const userReviews = allReviews.filter((r: any) => r.repoId === submission.repoId);
     
-    // Get all reviews for this contest (across all stages)
-    const allReviews = await ctx.db
-      .query("submissionReview")
-      .withIndex("by_contest", (q: any) => q.eq("contestId", args.contestId))
-      .collect();
-    
-    // Get all judging assignments to check completion
-    const assignments = await ctx.db
-      .query("judgingAssignments")
-      .withIndex("by_contest_judge", (q: any) => q.eq("contestId", args.contestId))
-      .collect();
-    
-    // Calculate scores for each user
-    const userScores = new Map<string, {
-      userId: string,
-      totalScore: number,
-      reviewsReceived: number,
-      submissionCount: number,
-      reviewsGiven: number,
-      assignmentsCompleted: number,
-      totalAssignments: number,
-    }>();
-    
-    // Process submissions and their reviews
-    for (const submission of submissions) {
-      const userReviews = allReviews.filter(r => r.repoId === submission.repoId);
+    if (userReviews.length > 0) {
+      const avgScore = userReviews.reduce((sum: number, r: any) => {
+        const reviewScore = (r.themeRating + r.designRating + r.functionalityRating) / 3;
+        return sum + reviewScore;
+      }, 0) / userReviews.length;
       
-      if (userReviews.length > 0) {
-        const avgScore = userReviews.reduce((sum, r) => {
-          const reviewScore = (r.themeRating + r.designRating + r.functionalityRating) / 3;
-          return sum + reviewScore;
-        }, 0) / userReviews.length;
-        
-        const existing = userScores.get(submission.userId) || {
-          userId: submission.userId,
-          totalScore: 0,
-          reviewsReceived: 0,
-          submissionCount: 0,
-          reviewsGiven: 0,
-          assignmentsCompleted: 0,
-          totalAssignments: 0,
-        };
-        
-        existing.totalScore += avgScore;
-        existing.reviewsReceived += userReviews.length;
-        existing.submissionCount += 1;
-        
-        userScores.set(submission.userId, existing);
-      }
-    }
-    
-    // Count reviews given by each user
-    for (const review of allReviews) {
-      const existing = userScores.get(review.userId) || {
-        userId: review.userId,
+      const existing = userScores.get(submission.userId) || {
+        userId: submission.userId,
         totalScore: 0,
         reviewsReceived: 0,
         submissionCount: 0,
@@ -89,59 +77,73 @@ export const getContestLeaderboard = query({
         assignmentsCompleted: 0,
         totalAssignments: 0,
       };
-      existing.reviewsGiven += 1;
-      userScores.set(review.userId, existing);
+      
+      existing.totalScore += avgScore;
+      existing.reviewsReceived += userReviews.length;
+      existing.submissionCount += 1;
+      
+      userScores.set(submission.userId, existing);
     }
-    
-    // Count completed assignments
-    for (const assignment of assignments) {
-      const existing = userScores.get(assignment.judgeUserId);
-      if (existing) {
-        existing.totalAssignments += 1;
-        if (assignment.completed) {
-          existing.assignmentsCompleted += 1;
-        }
+  }
+  
+  // Count reviews given by each user
+  for (const review of allReviews) {
+    const existing = userScores.get(review.userId) || {
+      userId: review.userId,
+      totalScore: 0,
+      reviewsReceived: 0,
+      submissionCount: 0,
+      reviewsGiven: 0,
+      assignmentsCompleted: 0,
+      totalAssignments: 0,
+    };
+    existing.reviewsGiven += 1;
+    userScores.set(review.userId, existing);
+  }
+  
+  // Count completed assignments
+  for (const assignment of assignments) {
+    const existing = userScores.get(assignment.judgeUserId);
+    if (existing) {
+      existing.totalAssignments += 1;
+      if (assignment.completed) {
+        existing.assignmentsCompleted += 1;
       }
     }
-    
-    // Filter to only include users who have given at least 5 reviews
-    const qualifiedUsers = Array.from(userScores.values())
-      .filter(user => user.reviewsGiven >= 5 && user.submissionCount > 0);
-    
-    // Calculate final scores and sort
-    const rankedUsers = qualifiedUsers
-      .map(user => ({
-        ...user,
-        finalScore: user.totalScore / user.submissionCount, // Average score across submissions
-      }))
-      .sort((a, b) => b.finalScore - a.finalScore);
-    
-    // Assign ranks and format output
-    const leaderboard: LeaderboardEntry[] = rankedUsers.map((user, index) => ({
-      rank: index + 1,
-      userId: user.userId,
-      displayName: user.userId, // Will be replaced with actual display name from Stack Auth
-      score: Math.round(user.finalScore * 100) / 100,
-      submissionCount: user.submissionCount,
-      reviewCount: user.reviewsGiven,
-      completedAllReviews: user.assignmentsCompleted === user.totalAssignments,
-    }));
-    
-    return leaderboard;
-  },
-});
+  }
+  
+  // Filter to only include users who have given at least 5 reviews
+  const qualifiedUsers = Array.from(userScores.values())
+    .filter(user => user.reviewsGiven >= 5 && user.submissionCount > 0);
+  
+  // Calculate final scores and sort
+  const rankedUsers = qualifiedUsers
+    .map(user => ({
+      ...user,
+      finalScore: user.totalScore / user.submissionCount, // Average score across submissions
+    }))
+    .sort((a, b) => b.finalScore - a.finalScore);
+  
+  // Assign ranks and format output
+  const leaderboard: LeaderboardEntry[] = rankedUsers.map((user, index) => ({
+    rank: index + 1,
+    userId: user.userId,
+    displayName: user.userId, // Will be replaced with actual display name from Stack Auth
+    score: Math.round(user.finalScore * 100) / 100,
+    submissionCount: user.submissionCount,
+    reviewCount: user.reviewsGiven,
+    completedAllReviews: user.assignmentsCompleted === user.totalAssignments,
+  }));
+  
+  return leaderboard;
+};
 
-/**
- * Get the winner (top scorer) of a contest
- */
 export const getContestWinner = query({
   args: {
     contestId: v.id("contests"),
   },
   handler: async (ctx, args) => {
-    const leaderboard = await ctx.runQuery(internal.leaderboard.getContestLeaderboard, {
-      contestId: args.contestId,
-    });
+    const leaderboard = await calculateLeaderboard(ctx, args.contestId);
     
     if (leaderboard.length === 0) return null;
     
@@ -169,9 +171,7 @@ export const getRecentWinners = query({
     // Get winner for each contest
     const winners = await Promise.all(
       contests.map(async (contest) => {
-        const leaderboard = await ctx.runQuery(internal.leaderboard.getContestLeaderboard, {
-          contestId: contest._id,
-        });
+        const leaderboard = await calculateLeaderboard(ctx, contest._id);
         
         if (leaderboard.length === 0) return null;
         
@@ -214,9 +214,7 @@ export const getWeeklyTopWinners = query({
     const winCounts = new Map<string, { userId: string, displayName: string, wins: number }>();
     
     for (const contest of contests) {
-      const leaderboard = await ctx.runQuery(internal.leaderboard.getContestLeaderboard, {
-        contestId: contest._id,
-      });
+      const leaderboard = await calculateLeaderboard(ctx, contest._id);
       
       if (leaderboard.length > 0) {
         const winner = leaderboard[0];
@@ -244,9 +242,3 @@ export const getWeeklyTopWinners = query({
   },
 });
 
-// Internal namespace for private queries
-export const internal = {
-  leaderboard: {
-    getContestLeaderboard,
-  },
-};

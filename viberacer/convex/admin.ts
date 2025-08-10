@@ -88,13 +88,11 @@ export const getSystemStats = query({
       totalContests,
       totalSubmissions,
       totalReviews,
-      totalWinners,
       currentStage,
     ] = await Promise.all([
       ctx.db.query("contests").collect().then(c => c.length),
       ctx.db.query("submission").collect().then(s => s.length),
       ctx.db.query("submissionReview").collect().then(r => r.length),
-      ctx.db.query("winners").collect().then(w => w.length),
       ctx.db.query("stageState").first(),
     ]);
     
@@ -117,7 +115,6 @@ export const getSystemStats = query({
       totalContests,
       totalSubmissions,
       totalReviews,
-      totalWinners,
       uniqueUsers: uniqueUsers.size,
       currentStage: currentStage?.currentStage || "unknown",
       activeContestId: activeContest?._id,
