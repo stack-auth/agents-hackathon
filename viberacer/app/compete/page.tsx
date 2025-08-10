@@ -34,7 +34,7 @@ export default function CompetePage() {
   
   // Redirect based on current stage
   useEffect(() => {
-    if (!contestState || !mySubmission) return;
+    if (!contestState || mySubmission === undefined) return;
     // Prevent multiple redirects
     if (hasRedirected.current) return;
     
@@ -69,7 +69,7 @@ export default function CompetePage() {
       // Only reload if we haven't redirected and have been on the page for 4+ seconds
       if (!hasRedirected.current && Date.now() - loadTime.current >= 4000) {
         console.log("Compete page stuck, reloading...");
-        window.location.reload();
+        // window.location.reload();
       }
     }, 4000);
     
