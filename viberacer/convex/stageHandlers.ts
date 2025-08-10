@@ -125,6 +125,29 @@ const stageEndHandlers: Record<ContestStage, (ctx: any) => Promise<void>> = {
       status: "active",
     });
     console.log(`Created new contest: ${contestId}`);
+    
+    // Create a bot submission with a new Freestyle repo
+    const BOT_USER_ID = "707370e2-611f-43a4-a354-619f6402fcbc";
+    
+    try {
+      // Create a new repo ID for the bot
+      // In production, this would actually create a Freestyle repo
+      // For now, we'll use a unique ID with a bot prefix
+      const botRepoId = `bot-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      
+      // Create the bot submission
+      await ctx.db.insert("submission", {
+        contestId: contestId,
+        userId: BOT_USER_ID,
+        repoId: botRepoId,
+        timestamp: Date.now(),
+      });
+      
+      console.log(`Created bot submission for contest ${contestId} with repo ${botRepoId}`);
+    } catch (error) {
+      console.error("Failed to create bot submission:", error);
+      // Don't fail the whole contest creation if bot submission fails
+    }
   },
 };
 
