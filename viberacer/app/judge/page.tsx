@@ -125,9 +125,9 @@ export default function JudgePage() {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
         <div className="text-center space-y-6">
-          <h1 className="text-3xl font-bold text-green-400">✓ Judging Complete!</h1>
+          <h1 className="text-3xl font-bold text-green-400">✓ Submitted successfully!</h1>
           <p className="text-xl text-gray-300">
-            Thank you for reviewing {completedCount} submission{completedCount !== 1 ? 's' : ''}.
+            Thank you for reviewing {completedCount} submission{completedCount !== 1 ? 's' : ''}. We will continue with the next judging stage shortly.
           </p>
           <div className="py-4">
             <p className="text-gray-400 mb-2">Next stage in</p>

@@ -216,8 +216,12 @@ export const getUserStats = query({
     
     // Convert to array and sort by activity
     const userStatsArray = Array.from(userStats.values()).map(stats => ({
-      ...stats,
-      contestCount: stats.contests.size,
+      userId: stats.userId,
+      submissions: stats.submissions,
+      reviews: stats.reviews,
+      contestCount: stats.contests.size,  // Convert Set size to number
+      lastActive: stats.lastActive,
+      // Don't include the Set itself, just its size
     }));
     
     return userStatsArray.sort((a, b) => b.submissions - a.submissions);

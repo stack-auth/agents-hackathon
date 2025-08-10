@@ -11,8 +11,14 @@ export default function CompetePage() {
   const contestState = useQuery(api.race.getCurrentContestState);
 
   const createRepoAndRedirect = async () => {
-    const repoId = await createRepo();
-    router.push(`/hack/${repoId}`);
+    try {
+      const repoId = await createRepo();
+      router.push(`/hack/${repoId}`);
+    } catch (error) {
+      console.error("Failed to create repo, redirecting to /hack:", error);
+      // Fallback to /hack without repoId if creation fails
+      router.push("/hack");
+    }
   }
 
   const hasRedirected = useRef(false);
