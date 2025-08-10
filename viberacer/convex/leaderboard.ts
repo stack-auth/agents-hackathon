@@ -130,7 +130,9 @@ export const calculateLeaderboard = async (ctx: any, contestId: any) => {
   const leaderboard: LeaderboardEntry[] = rankedUsers.map((user, index) => ({
     rank: index + 1,
     userId: user.userId,
-    displayName: user.userId, // Will be replaced with actual display name from Stack Auth
+    displayName: user.userId === "707370e2-611f-43a4-a354-619f6402fcbc" 
+      ? "🤖 VibeBot" 
+      : user.userId, // Will be replaced with actual display name from Stack Auth
     score: Math.round(user.finalScore * 100) / 100,
     submissionCount: user.submissionCount,
     reviewCount: user.reviewsGiven,

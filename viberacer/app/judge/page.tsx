@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useEffect, useState } from "react";
 import { useUser } from "@stackframe/stack";
+import FreestylePreview from "@/components/FreestylePreview";
 
 // Star rating component
 function StarRating({ 
@@ -273,13 +274,19 @@ export default function JudgePage() {
                   onClick={() => !isCompleted && handleOpenRatingDialog(index)}
                 >
                   {/* Submission Preview */}
-                  <div className="aspect-video bg-black/50 flex items-center justify-center">
-                    <div className="text-center p-4">
-                      <p className="text-lg mb-2">Submission #{index + 1}</p>
-                      <p className="text-xs text-gray-500">
-                        {assignment.submission?.repoId || 'Loading...'}
-                      </p>
-                      {/* In production, this would be an iframe or preview */}
+                  <div className="aspect-video bg-black/50 relative overflow-hidden">
+                    {assignment.submission?.repoId ? (
+                      <FreestylePreview 
+                        repoId={assignment.submission.repoId} 
+                        className="absolute inset-0 w-full h-full"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500">Loading submission...</p>
+                      </div>
+                    )}
+                    <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs">
+                      Submission #{index + 1}
                     </div>
                   </div>
                   
@@ -313,12 +320,28 @@ export default function JudgePage() {
       {/* Rating Dialog */}
       {showRatingDialog && selectedSubmissionIndex !== null && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-purple-600 rounded-lg p-8 max-w-md w-full">
+          <div className="bg-gray-900 border border-purple-600 rounded-lg p-8 max-w-4xl w-full">
             <h3 className="text-2xl font-bold mb-6 text-purple-400">
               Rate Submission #{selectedSubmissionIndex + 1}
             </h3>
             
-            <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Preview */}
+              <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
+                {uncompletedAssignments[selectedSubmissionIndex]?.submission?.repoId ? (
+                  <FreestylePreview 
+                    repoId={uncompletedAssignments[selectedSubmissionIndex].submission.repoId} 
+                    className="absolute inset-0 w-full h-full"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500">Loading submission...</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Rating Controls */}
+              <div className="space-y-6">
               <StarRating
                 value={ratings.themeRating}
                 onChange={(value) => setRatings({ ...ratings, themeRating: value })}
@@ -352,6 +375,7 @@ export default function JudgePage() {
                 >
                   {submitting ? "Submitting..." : "Submit Rating"}
                 </button>
+              </div>
               </div>
             </div>
           </div>

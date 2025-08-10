@@ -28,6 +28,7 @@ import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { Thread } from "@/components/assistant-ui/thread";
 import { useStackApp } from "@stackframe/stack";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useEffect } from "react";
 
 
 
@@ -40,6 +41,7 @@ export default function CompeteWithRepo() {
   const repoId = params?.repoId ?? "";
   const createSubmission = useMutation(api.submissions.createSubmission);
   const timeData = useQuery(api.adminData.getAdminData);
+  const contestState = useQuery(api.race.getCurrentContestState);
   const router = useRouter();
 
   const chat = useChat({
@@ -55,11 +57,20 @@ export default function CompeteWithRepo() {
   const handleDialogSubmit = async () => {
     await createSubmission({ repoId, userId });
     setOpen(false);
-    router.push(`/judge`);
   };
 
   const runtime = useAISDKRuntime(chat);
 
+  // Auto-redirect when contest stage changes
+  useEffect(() => {
+    if (!contestState) return;
+    
+    // Only redirect if we're not in the in_progress stage
+    if (contestState.stage !== "in_progress") {
+      console.log("Contest stage changed to", contestState.stage, "- redirecting from hack page");
+      router.push("/compete");
+    }
+  }, [contestState, router]);
 
   return (
     <div className="h-[calc(100vh-0px)] w-full">
