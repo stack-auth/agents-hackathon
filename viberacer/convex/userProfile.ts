@@ -1,5 +1,6 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { calculateLeaderboard } from "./leaderboard";
 
 export interface UserActivity {
   date: string; // YYYY-MM-DD
@@ -58,7 +59,6 @@ const calculateUserProfile = async (ctx: any, userId: string) => {
     const dateStr = date.toISOString().split('T')[0];
     
     // Check if user won this contest
-    const { calculateLeaderboard } = await import("./leaderboard") as any;
     const leaderboard = await calculateLeaderboard(ctx, contest._id);
     
     const userEntry = leaderboard.find((e: any) => e.userId === userId);

@@ -1,5 +1,6 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { calculateLeaderboard } from "./leaderboard";
 
 // Get all contests with their submissions count
 export const getAllContests = query({
@@ -10,7 +11,7 @@ export const getAllContests = query({
       .order("desc")
       .take(50);
     
-    // Get submission counts for each contest
+    // Get submission counts and winner for each contest
     const contestsWithStats = await Promise.all(
       contests.map(async (contest) => {
         const submissions = await ctx.db
@@ -23,11 +24,25 @@ export const getAllContests = query({
           .withIndex("by_contest", (q: any) => q.eq("contestId", contest._id))
           .collect();
         
+        // Get winner if contest is completed
+        let winner = null;
+        if (contest.status === "completed") {
+          const leaderboard = await calculateLeaderboard(ctx, contest._id);
+          if (leaderboard.length > 0) {
+            winner = {
+              userId: leaderboard[0].userId,
+              displayName: leaderboard[0].displayName,
+              score: leaderboard[0].score,
+            };
+          }
+        }
+        
         return {
           ...contest,
           submissionCount: submissions.length,
           reviewCount: reviews.length,
-          participants: [...new Set(submissions.map(s => s.userId))].length,
+          participants: [...new Set(submissions.map((s: any) => s.userId))].length,
+          winner,
         };
       })
     );

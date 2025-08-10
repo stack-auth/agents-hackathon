@@ -96,12 +96,20 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-black">ADMIN DASHBOARD</h1>
-          <button
-            onClick={() => router.push("/home")}
-            className="text-sm text-gray-600 hover:text-black transition-colors"
-          >
-            ← Back to homepage
-          </button>
+          <div className="flex space-x-4">
+            <button
+              onClick={() => router.push("/leaderboards")}
+              className="text-sm text-purple-600 hover:text-purple-800 font-bold transition-colors"
+            >
+              View Leaderboards →
+            </button>
+            <button
+              onClick={() => router.push("/home")}
+              className="text-sm text-gray-600 hover:text-black transition-colors"
+            >
+              ← Back to homepage
+            </button>
+          </div>
         </div>
         
         {/* Tab Navigation */}
@@ -276,6 +284,7 @@ export default function AdminPage() {
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Submissions</th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Reviews</th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Participants</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Winner</th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Actions</th>
                     </tr>
                   </thead>
@@ -300,6 +309,16 @@ export default function AdminPage() {
                         <td className="px-4 py-2 text-xs text-center">{contest.submissionCount}</td>
                         <td className="px-4 py-2 text-xs text-center">{contest.reviewCount}</td>
                         <td className="px-4 py-2 text-xs text-center">{contest.participants}</td>
+                        <td className="px-4 py-2 text-xs">
+                          {contest.winner ? (
+                            <div>
+                              <span className="font-bold">{contest.winner.displayName}</span>
+                              <span className="text-gray-500 ml-1">({contest.winner.score})</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
                         <td className="px-4 py-2">
                           <button
                             onClick={() => setSelectedContestId(contest._id)}
