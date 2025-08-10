@@ -5,19 +5,27 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useEffect } from "react";
 import { createRepo } from "@/lib/create-repo";
+import { useStackApp } from "@stackframe/stack";
 
 export default function CompetePage() {
   const router = useRouter();
+  const stack = useStackApp();
+  const { id: userId } = stack.useUser({ or: "redirect" });
   const contestState = useQuery(api.race.getCurrentContestState);
+  const mySubmission = useQuery(api.submissions.getMySubmission, { userId });
 
   const createRepoAndRedirect = async () => {
+    if (mySubmission?.repoId) {
+      router.push(`/hack/${mySubmission.repoId}`);
+      return;
+    }
     const repoId = await createRepo();
     router.push(`/hack/${repoId}`);
   }
   
   // Redirect based on current stage
   useEffect(() => {
-    if (!contestState) return;
+    if (!contestState || !mySubmission) return;
     
     switch (contestState.stage) {
       case "in_progress":

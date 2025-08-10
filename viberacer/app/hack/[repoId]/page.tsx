@@ -93,7 +93,7 @@ export default function CompeteWithRepo() {
           <DialogHeader>
             <DialogTitle>Ready to submit?</DialogTitle>
             <DialogDescription>
-              You'll move on to the judging phase after submitting.
+              You can always re-submit later.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
