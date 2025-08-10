@@ -27,6 +27,7 @@ import { useAISDKRuntime } from "@assistant-ui/react-ai-sdk";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { Thread } from "@/components/assistant-ui/thread";
 import { useStackApp } from "@stackframe/stack";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 
@@ -74,6 +75,16 @@ export default function CompeteWithRepo() {
                 ) : (
                   <span />
                 )}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <span className="text-xs text-gray-500 border border-gray-500 p-2 rounded-md">
+                      Contest Theme
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Create a modern and minimalist todo app with a dark theme.
+                  </TooltipContent>
+                </Tooltip>
                 <Button onClick={handleSubmit}>Submit Project</Button>
               </div>
               <div className="flex-grow h-0">
