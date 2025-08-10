@@ -19,6 +19,19 @@ export default defineSchema({
     .index("by_scheduled", ["scheduledTimestamp"])
     .index("by_actual", ["actualTimestamp"])
     .index("by_status", ["status"]),
+  winners: defineTable({
+    // Display name of the winner (e.g., user display name or team name)
+    name: v.string(),
+    // Unix timestamp when the win occurred (used for ordering)
+    timestamp: v.number(),
+    // Final score associated with the winning entry (may be missing in some cases)
+    score: v.optional(v.number()),
+    // Optional metadata used by various parts of the app
+    contestHour: v.optional(v.string()),
+    contestId: v.optional(v.id("contests")),
+    userId: v.optional(v.string()),
+    repoId: v.optional(v.string()),
+  }).index("by_timestamp", ["timestamp"]),
   numbers: defineTable({
     value: v.number(),
   }),
