@@ -1,6 +1,5 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
 
 export interface LeaderboardEntry {
   rank: number;
@@ -112,15 +111,18 @@ export const calculateLeaderboard = async (ctx: any, contestId: any) => {
     }
   }
   
-  // Filter to only include users who have given at least 5 reviews
-  const qualifiedUsers = Array.from(userScores.values())
-    .filter(user => user.reviewsGiven >= 5 && user.submissionCount > 0);
+  // Get all users with submissions
+  const allUsers = Array.from(userScores.values())
+    .filter(user => user.submissionCount > 0);
   
-  // Calculate final scores and sort
-  const rankedUsers = qualifiedUsers
+  // Calculate final scores - give 0 to users with <5 reviews
+  const rankedUsers = allUsers
     .map(user => ({
       ...user,
-      finalScore: user.totalScore / user.submissionCount, // Average score across submissions
+      finalScore: user.reviewsGiven >= 5 
+        ? user.totalScore / user.submissionCount  // Average score for qualified users
+        : 0,  // Zero score for non-qualified users
+      qualified: user.reviewsGiven >= 5,
     }))
     .sort((a, b) => b.finalScore - a.finalScore);
   
@@ -132,7 +134,7 @@ export const calculateLeaderboard = async (ctx: any, contestId: any) => {
     score: Math.round(user.finalScore * 100) / 100,
     submissionCount: user.submissionCount,
     reviewCount: user.reviewsGiven,
-    completedAllReviews: user.assignmentsCompleted === user.totalAssignments,
+    completedAllReviews: user.reviewsGiven >= 5,  // Now based on minimum review requirement
   }));
   
   return leaderboard;

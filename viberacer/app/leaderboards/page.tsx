@@ -207,9 +207,9 @@ export default function LeaderboardsPage() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         {entry.completedAllReviews ? (
-                          <span className="text-green-400">✓ Complete</span>
+                          <span className="text-green-400">✓ Qualified</span>
                         ) : (
-                          <span className="text-yellow-400">Partial</span>
+                          <span className="text-red-400">Disqualified (0 pts)</span>
                         )}
                       </td>
                     </tr>
