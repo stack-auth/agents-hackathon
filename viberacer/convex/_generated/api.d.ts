@@ -26,12 +26,14 @@ import type * as events from "../events.js";
 import type * as init from "../init.js";
 import type * as judging from "../judging.js";
 import type * as judgingAssignments from "../judgingAssignments.js";
+import type * as leaderboard from "../leaderboard.js";
 import type * as race from "../race.js";
 import type * as rankingCalculator from "../rankingCalculator.js";
 import type * as seed from "../seed.js";
 import type * as stageHandlers from "../stageHandlers.js";
 import type * as stageMonitor from "../stageMonitor.js";
 import type * as submissions from "../submissions.js";
+import type * as userProfile from "../userProfile.js";
 import type * as winners from "../winners.js";
 
 /**
@@ -56,12 +58,14 @@ declare const fullApi: ApiFromModules<{
   init: typeof init;
   judging: typeof judging;
   judgingAssignments: typeof judgingAssignments;
+  leaderboard: typeof leaderboard;
   race: typeof race;
   rankingCalculator: typeof rankingCalculator;
   seed: typeof seed;
   stageHandlers: typeof stageHandlers;
   stageMonitor: typeof stageMonitor;
   submissions: typeof submissions;
+  userProfile: typeof userProfile;
   winners: typeof winners;
 }>;
 export declare const api: FilterApi<
