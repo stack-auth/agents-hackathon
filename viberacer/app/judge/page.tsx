@@ -151,7 +151,7 @@ export default function JudgePage() {
         <div className="text-center space-y-4 max-w-md">
           <h1 className="text-2xl font-bold text-red-400">No Submission Found</h1>
           <p className="text-gray-300">
-            You must submit a project to participate in judging.
+            No submissions found. Please wait until this round ends.
           </p>
           <button
             onClick={() => router.push("/home")}
