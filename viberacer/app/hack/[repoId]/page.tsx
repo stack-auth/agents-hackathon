@@ -55,7 +55,7 @@ export default function CompeteWithRepo() {
   const handleDialogSubmit = async () => {
     await createSubmission({ repoId, userId });
     setOpen(false);
-    router.push(`/judge/${repoId}`);
+    router.push(`/judge`);
   };
 
   const runtime = useAISDKRuntime(chat);
@@ -67,7 +67,7 @@ export default function CompeteWithRepo() {
         <ResizablePanel defaultSize={30} minSize={20} className="border-r">
           <AssistantRuntimeProvider runtime={runtime}>
             <div className="h-full flex flex-col">
-              <div className="px-4 py-3 border-b flex justify-between">
+              <div className="px-4 py-3 border-b flex justify-between items-center">
                 {timeData ? (
                   <span className="text-xl font-mono text-black">
                     {Math.floor(timeData.timeToNext / 60)}:{String(Math.floor(timeData.timeToNext % 60)).padStart(2, '0')}
@@ -78,7 +78,7 @@ export default function CompeteWithRepo() {
                 <Tooltip>
                   <TooltipTrigger>
                     <span className="text-xs text-gray-500 border border-gray-500 p-2 rounded-md">
-                      Contest Theme
+                      Contest&nbsp;Theme
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
