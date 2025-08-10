@@ -22,12 +22,6 @@ export default defineSchema({
   numbers: defineTable({
     value: v.number(),
   }),
-  winners: defineTable({
-    name: v.string(),
-    timestamp: v.number(),
-    contestHour: v.optional(v.string()), // e.g. "3:00am", "11:00pm" - optional for migration
-    score: v.optional(v.number()),
-  }).index("by_timestamp", ["timestamp"]),
   stageTracker: defineTable({
     currentStage: v.union(
       v.literal("in_progress"),

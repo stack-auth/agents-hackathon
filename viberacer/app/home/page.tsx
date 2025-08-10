@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import GlitchText from "../../react-bits/text-animations/GlitchText/GlitchText";
@@ -11,8 +12,8 @@ import Portal from "../../components/Portal";
 
 export default function HomePage() {
   const router = useRouter();
-  const recentWinners = useQuery(api.winners.getRecentWinners);
-  const topWinners = useQuery(api.winners.getWeeklyTopWinners);
+  const recentWinners = useQuery(api.leaderboard.getRecentWinners, { limit: 3 });
+  const topWinners = useQuery(api.leaderboard.getWeeklyTopWinners, {});
   const upcomingEvents = useQuery(api.events.getUpcomingEvents);
   const contestState = useQuery(api.race.getCurrentContestState);
   const contestConfig = useQuery(api.config.getContestConfig);
@@ -315,9 +316,12 @@ export default function HomePage() {
             <div className="space-y-1">
               {recentWinners.map((winner, idx) => (
                 <div key={idx} className="flex gap-4 items-baseline">
-                  <p className="text-xl font-bold text-white">
+                  <Link 
+                    href={`/user/${winner.userId}`}
+                    className="text-xl font-bold text-white hover:text-purple-400 transition-colors"
+                  >
                     {winner.name}
-                  </p>
+                  </Link>
                   <p className="text-lg text-gray-400">
                     {winner.contestHour}
                   </p>
@@ -347,9 +351,12 @@ export default function HomePage() {
                 const emoji = idx === 0 ? '👑' : idx === 1 ? '🥈' : '🥉';
                 return (
                   <div key={idx} className="flex gap-4 items-baseline">
-                    <p className="text-xl font-bold text-white">
+                    <Link 
+                      href={`/user/${winner.userId}`}
+                      className="text-xl font-bold text-white hover:text-purple-400 transition-colors"
+                    >
                       {emoji} {winner.name}
-                    </p>
+                    </Link>
                     <p className="text-lg text-gray-400">
                       {winner.wins} wins
                     </p>
