@@ -126,41 +126,21 @@ const stageEndHandlers: Record<ContestStage, (ctx: any) => Promise<void>> = {
     });
     console.log(`Created new contest: ${contestId}`);
     
-    // Create a bot submission with a real Freestyle repo
+    // Create a bot submission with a known demo repo
     const BOT_USER_ID = "707370e2-611f-43a4-a354-619f6402fcbc";
     
-    try {
-      // Create a real Freestyle repo for the bot using the API
-      // We'll call the create-repo endpoint to create an actual repo
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/create-bot-repo`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contestId: contestId.toString(),
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to create bot repo: ${response.statusText}`);
-      }
-      
-      const { repoId } = await response.json();
-      
-      // Create the bot submission with the real repo ID
-      await ctx.db.insert("submission", {
-        contestId: contestId,
-        userId: BOT_USER_ID,
-        repoId: repoId,
-        timestamp: Date.now(),
-      });
-      
-      console.log(`Created bot submission for contest ${contestId} with real repo ${repoId}`);
-    } catch (error) {
-      console.error("Failed to create bot submission:", error);
-      // Don't fail the whole contest creation if bot submission fails
-    }
+    // Use the pre-created bot demo repo ID from environment variables
+    const botRepoId = process.env.BOT_DEMO_REPO_ID || "760ee084-e1ee-470a-9778-7bf7bac5159a";
+    
+    // Create the bot submission with the demo repo ID
+    await ctx.db.insert("submission", {
+      contestId: contestId,
+      userId: BOT_USER_ID,
+      repoId: botRepoId,
+      timestamp: Date.now(),
+    });
+    
+    console.log(`Created bot submission for contest ${contestId} with repo ${botRepoId}`);
   },
 };
 

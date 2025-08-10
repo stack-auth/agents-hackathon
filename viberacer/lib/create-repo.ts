@@ -1,5 +1,5 @@
 "use server";
-import { freestyle } from "@/lib/freestyle";
+import { freestyle } from "../lib/freestyle";
 
 export async function createRepo({
   name = "VibeRacer App",
