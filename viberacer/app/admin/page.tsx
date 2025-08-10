@@ -13,6 +13,7 @@ export default function AdminPage() {
   const allContests = useQuery(api.admin.getAllContests);
   const recentActivity = useQuery(api.admin.getRecentActivity);
   const userStats = useQuery(api.admin.getUserStats);
+  const judgingStats = useQuery(api.judging.getJudgingStats);
   const advanceStage = useMutation(api.race.advanceStage);
   const initMonitoring = useMutation(api.race.initializeMonitoring);
   
@@ -221,6 +222,38 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+            
+            {/* Judging Stats Panel */}
+            {judgingStats && (
+              <div className="bg-white p-6 border border-gray-200">
+                <h2 className="text-lg font-bold mb-4">Current Judging Status</h2>
+                <div className="space-y-4">
+                  {judgingStats.stats.map(stage => (
+                    <div key={stage.stage} className="bg-gray-50 p-3 rounded">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold">Stage {stage.stage}</span>
+                        <span className="text-sm text-gray-600">
+                          {stage.completedAssignments}/{stage.totalAssignments} completed
+                        </span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-purple-600 transition-all"
+                          style={{ width: `${stage.completionRate}%` }}
+                        />
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {stage.completionRate}% complete • {stage.uniqueJudges} judges
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-2 border-t border-gray-200 text-sm">
+                    <p>Total Assignments: {judgingStats.totalAssignments}</p>
+                    <p>Total Completed: {judgingStats.totalCompleted}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
         
@@ -388,7 +421,7 @@ export default function AdminPage() {
                   <span className="font-mono">{activity.userId.slice(0, 12)}</span>
                   <span className="text-gray-600">{formatTimestamp(activity.timestamp)}</span>
                   {activity.type === "review" && (
-                    <span className="text-gray-600">Rating: {activity.rating}</span>
+                    <span className="text-gray-600">Avg Rating: {(activity as any).avgRating?.toFixed(1)}</span>
                   )}
                 </div>
               ))}

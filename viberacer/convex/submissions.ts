@@ -107,7 +107,9 @@ export const createSubmissionReview = mutation({
       // Update existing review
       await ctx.db.patch(existing._id, {
         repoId: args.repoId,
-        rating: args.rating,
+        themeRating: args.rating,
+        designRating: args.rating,
+        functionalityRating: args.rating,
         timestamp: Date.now(),
       });
     } else {
@@ -116,8 +118,11 @@ export const createSubmissionReview = mutation({
         contestId: activeContest._id,
         userId: args.userId,
         repoId: args.repoId,
-        rating: args.rating,
+        themeRating: args.rating,
+        designRating: args.rating,
+        functionalityRating: args.rating,
         timestamp: Date.now(),
+        stage: 1, // Default to stage 1 for backwards compatibility
       });
     }
   },

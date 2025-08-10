@@ -59,7 +59,7 @@ export const getContestDetails = query({
     const reviewsBySubmission = submissions.map(sub => {
       const subReviews = reviews.filter(r => r.repoId === sub.repoId);
       const avgRating = subReviews.length > 0 
-        ? subReviews.reduce((sum, r) => sum + r.rating, 0) / subReviews.length 
+        ? subReviews.reduce((sum, r) => sum + (r.themeRating + r.designRating + r.functionalityRating) / 3, 0) / subReviews.length 
         : null;
       
       return {
@@ -160,7 +160,7 @@ export const getRecentActivity = query({
         userId: r.userId,
         contestId: r.contestId,
         repoId: r.repoId,
-        rating: r.rating,
+        avgRating: (r.themeRating + r.designRating + r.functionalityRating) / 3,
       })),
     ].sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
     
@@ -216,8 +216,12 @@ export const getUserStats = query({
     
     // Convert to array and sort by activity
     const userStatsArray = Array.from(userStats.values()).map(stats => ({
-      ...stats,
-      contestCount: stats.contests.size,
+      userId: stats.userId,
+      submissions: stats.submissions,
+      reviews: stats.reviews,
+      contestCount: stats.contests.size,  // Convert Set size to number
+      lastActive: stats.lastActive,
+      // Don't include the Set itself, just its size
     }));
     
     return userStatsArray.sort((a, b) => b.submissions - a.submissions);

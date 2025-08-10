@@ -78,12 +78,16 @@ export default defineSchema({
     contestId: v.id("contests"),
     userId: v.string(),
     repoId: v.string(),
-    rating: v.number(),
+    themeRating: v.number(),
+    designRating: v.number(),
+    functionalityRating: v.number(),
     timestamp: v.number(),
+    stage: v.number(),
   })
     .index("by_contest", ["contestId"])
     .index("by_user", ["userId"])
-    .index("by_contest_user", ["contestId", "userId"]),
+    .index("by_contest_user", ["contestId", "userId"])
+    .index("by_contest_stage", ["contestId", "stage"]),
   stageState: defineTable({
     currentStage: v.union(
       v.literal("in_progress"),
@@ -96,4 +100,16 @@ export default defineSchema({
     lastCheckedTime: v.number(), // Unix timestamp of last check
     wasSkipped: v.boolean(), // Whether current stage was manually skipped
   }),
+  judgingAssignments: defineTable({
+    contestId: v.id("contests"),
+    judgeUserId: v.string(), // User who is judging
+    submissionId: v.id("submission"), // Submission they need to judge
+    stage: v.number(), // 1, 2, or 3
+    completed: v.boolean(), // Whether they've completed judging this submission
+    assignedAt: v.number(), // Timestamp when assigned
+    completedAt: v.optional(v.number()), // Timestamp when completed
+  })
+    .index("by_contest_judge", ["contestId", "judgeUserId"])
+    .index("by_contest_judge_stage", ["contestId", "judgeUserId", "stage"])
+    .index("by_submission", ["submissionId"]),
 });
