@@ -6,6 +6,47 @@ import { api } from "../../convex/_generated/api";
 import { useEffect, useState } from "react";
 import { useUser } from "@stackframe/stack";
 
+// Star rating component
+function StarRating({ 
+  value, 
+  onChange, 
+  label 
+}: { 
+  value: number; 
+  onChange: (value: number) => void; 
+  label: string;
+}) {
+  const [hover, setHover] = useState(0);
+  
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm text-gray-300">{label}</label>
+      <div className="flex space-x-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star * 2)} // Convert to 1-10 scale
+            onMouseEnter={() => setHover(star)}
+            onMouseLeave={() => setHover(0)}
+            className="text-3xl transition-colors focus:outline-none"
+          >
+            <span 
+              className={
+                (hover ? star <= hover : star * 2 <= value) 
+                  ? "text-yellow-400" 
+                  : "text-gray-600"
+              }
+            >
+              ★
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function JudgePage() {
   const router = useRouter();
   const user = useUser();
@@ -16,14 +57,16 @@ export default function JudgePage() {
   );
   const submitReview = useMutation(api.judging.submitReview);
   
-  const [showModal, setShowModal] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showIntroModal, setShowIntroModal] = useState(true);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [selectedSubmissionIndex, setSelectedSubmissionIndex] = useState<number | null>(null);
   const [ratings, setRatings] = useState({
-    themeRating: 5,
-    designRating: 5,
-    functionalityRating: 5,
+    themeRating: 6,
+    designRating: 6,
+    functionalityRating: 6,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [completedIndices, setCompletedIndices] = useState<Set<number>>(new Set());
   
   // Redirect if not in judging phase
   useEffect(() => {
@@ -65,31 +108,34 @@ export default function JudgePage() {
     }
   };
   
+  const handleOpenRatingDialog = (index: number) => {
+    setSelectedSubmissionIndex(index);
+    setRatings({
+      themeRating: 6,
+      designRating: 6,
+      functionalityRating: 6,
+    });
+    setShowRatingDialog(true);
+  };
+  
   const handleSubmitRating = async () => {
-    if (!user?.id || !judgingAssignments.assignments) return;
+    if (!user?.id || !judgingAssignments.assignments || selectedSubmissionIndex === null) return;
     
-    const currentAssignment = judgingAssignments.assignments.filter(a => !a.completed)[currentIndex];
-    if (!currentAssignment) return;
+    const assignment = judgingAssignments.assignments.filter(a => !a.completed)[selectedSubmissionIndex];
+    if (!assignment) return;
     
     setSubmitting(true);
     try {
       await submitReview({
         userId: user.id,
-        submissionId: currentAssignment.submissionId,
+        submissionId: assignment.submissionId,
         ...ratings,
       });
       
-      // Move to next submission
-      const remainingAssignments = judgingAssignments.assignments.filter(a => !a.completed);
-      if (currentIndex < remainingAssignments.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-        // Reset ratings for next submission
-        setRatings({
-          themeRating: 5,
-          designRating: 5,
-          functionalityRating: 5,
-        });
-      }
+      // Mark as completed
+      setCompletedIndices(prev => new Set([...prev, selectedSubmissionIndex]));
+      setShowRatingDialog(false);
+      setSelectedSubmissionIndex(null);
     } catch (error) {
       console.error("Failed to submit review:", error);
     } finally {
@@ -104,7 +150,7 @@ export default function JudgePage() {
         <div className="text-center space-y-4 max-w-md">
           <h1 className="text-2xl font-bold text-red-400">No Submission Found</h1>
           <p className="text-gray-300">
-            No submissions were submitted for this contest.
+            You must submit a project to participate in judging.
           </p>
           <button
             onClick={() => router.push("/home")}
@@ -118,16 +164,16 @@ export default function JudgePage() {
   }
   
   const uncompletedAssignments = judgingAssignments.assignments?.filter(a => !a.completed) || [];
-  const completedCount = (judgingAssignments.assignments?.length || 0) - uncompletedAssignments.length;
+  const completedCount = (judgingAssignments.assignments?.length || 0) - uncompletedAssignments.length + completedIndices.size;
   
-  // All assignments completed or time ran out
-  if (judgingAssignments.allCompleted || uncompletedAssignments.length === 0) {
+  // All assignments completed
+  if (judgingAssignments.allCompleted || (uncompletedAssignments.length === completedIndices.size && completedIndices.size > 0)) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-mono">
         <div className="text-center space-y-6">
-          <h1 className="text-3xl font-bold text-green-400">✓ Submitted successfully!</h1>
+          <h1 className="text-3xl font-bold text-green-400">✓ All Reviews Complete!</h1>
           <p className="text-xl text-gray-300">
-            Thank you for reviewing {completedCount} submission{completedCount !== 1 ? 's' : ''}. We will continue with the next judging stage shortly.
+            Thank you for reviewing {completedCount} submission{completedCount !== 1 ? 's' : ''}. 
           </p>
           <div className="py-4">
             <p className="text-gray-400 mb-2">Next stage in</p>
@@ -146,12 +192,10 @@ export default function JudgePage() {
     );
   }
   
-  const currentAssignment = uncompletedAssignments[currentIndex];
-  
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
-      {/* Modal */}
-      {showModal && (
+    <div className="min-h-screen bg-black text-white font-mono p-4">
+      {/* Intro Modal */}
+      {showIntroModal && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-purple-600 rounded-lg p-8 max-w-2xl">
             <h2 className="text-3xl font-bold mb-4 text-purple-400">
@@ -168,160 +212,146 @@ export default function JudgePage() {
                 <p className="font-bold mb-2 text-yellow-400">⚠️ IMPORTANT:</p>
                 <ul className="space-y-1 text-sm">
                   <li>• You MUST complete all reviews or your submission will be <span className="text-red-400">INVALID</span></li>
-                  <li>• Judge fairly based on the three categories</li>
-                  <li>• Each submission takes about 30-45 seconds to review</li>
-                  <li>• The timer shows 55 seconds (5 second buffer for network lag)</li>
-                </ul>
-              </div>
-              
-              <div className="bg-black/50 p-4 rounded">
-                <p className="font-bold mb-2">Rating Categories:</p>
-                <ul className="space-y-1 text-sm">
-                  <li>• <span className="text-purple-400">Theme:</span> How well does it match the vibe?</li>
-                  <li>• <span className="text-purple-400">Design:</span> Visual appeal and user experience</li>
-                  <li>• <span className="text-purple-400">Functionality:</span> Does it work? Is it complete?</li>
+                  <li>• Click on each submission to rate it</li>
+                  <li>• Use the star ratings (1-5 stars) for each category</li>
+                  <li>• Judge fairly and quickly - time is limited!</li>
                 </ul>
               </div>
               
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => setShowIntroModal(false)}
                 className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 transition-colors rounded-lg font-bold text-lg"
               >
-                Start Reviewing ({uncompletedAssignments.length} submissions)
+                Start Reviewing
               </button>
             </div>
           </div>
         </div>
       )}
       
-      {/* Main judging interface */}
-      {!showModal && currentAssignment && (
-        <div className="container mx-auto px-4 py-8">
+      {/* Main Interface */}
+      {!showIntroModal && (
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-2xl font-bold">JUDGING - {getJudgingStage()}</h1>
+              <h1 className="text-3xl font-bold">JUDGING - {getJudgingStage()}</h1>
               <p className="text-gray-400">
-                Submission {completedCount + 1} of {judgingAssignments.assignments?.length || 0}
+                {completedCount} of {judgingAssignments.assignments?.length || 0} reviewed
               </p>
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-400">Time remaining</p>
-              <p className="text-2xl font-bold text-purple-400">
+              <p className="text-3xl font-bold text-purple-400">
                 {minutes}:{String(seconds).padStart(2, '0')}
               </p>
             </div>
           </div>
           
-          {/* Submission viewer */}
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Iframe or submission preview */}
-            <div className="bg-gray-900 rounded-lg p-4">
-              <h2 className="text-lg font-bold mb-4 text-purple-400">Submission Preview</h2>
-              <div className="bg-black rounded h-96 flex items-center justify-center text-gray-500">
-                <div className="text-center">
-                  <p className="mb-2">Repository: {currentAssignment.submission?.repoId}</p>
-                  <p className="text-xs">
-                    (In production, this would show the actual submission)
-                  </p>
-                </div>
-              </div>
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-300"
+                style={{ width: `${(completedCount / (judgingAssignments.assignments?.length || 1)) * 100}%` }}
+              />
             </div>
+          </div>
+          
+          {/* 2x2 Grid of Submissions */}
+          <div className="grid grid-cols-2 gap-4">
+            {uncompletedAssignments.map((assignment, index) => {
+              const isCompleted = completedIndices.has(index);
+              return (
+                <div
+                  key={assignment.submissionId}
+                  className={`relative bg-gray-900 rounded-lg overflow-hidden border-2 transition-all ${
+                    isCompleted 
+                      ? 'border-green-500 opacity-50' 
+                      : 'border-gray-700 hover:border-purple-500 cursor-pointer'
+                  }`}
+                  onClick={() => !isCompleted && handleOpenRatingDialog(index)}
+                >
+                  {/* Submission Preview */}
+                  <div className="aspect-video bg-black/50 flex items-center justify-center">
+                    <div className="text-center p-4">
+                      <p className="text-lg mb-2">Submission #{index + 1}</p>
+                      <p className="text-xs text-gray-500">
+                        {assignment.submission?.repoId || 'Loading...'}
+                      </p>
+                      {/* In production, this would be an iframe or preview */}
+                    </div>
+                  </div>
+                  
+                  {/* Status Overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    {isCompleted ? (
+                      <div className="flex items-center justify-center text-green-400">
+                        <span className="text-2xl mr-2">✓</span>
+                        <span className="font-bold">Reviewed</span>
+                      </div>
+                    ) : (
+                      <button className="w-full py-2 bg-purple-600 hover:bg-purple-700 transition-colors rounded font-bold">
+                        RATE THIS
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Quick Stats */}
+          <div className="mt-6 flex justify-center space-x-8 text-sm text-gray-400">
+            <div>Remaining: {uncompletedAssignments.length - completedIndices.size}</div>
+            <div>Completed: {completedCount}</div>
+            <div>Total: {judgingAssignments.assignments?.length || 0}</div>
+          </div>
+        </div>
+      )}
+      
+      {/* Rating Dialog */}
+      {showRatingDialog && selectedSubmissionIndex !== null && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-purple-600 rounded-lg p-8 max-w-md w-full">
+            <h3 className="text-2xl font-bold mb-6 text-purple-400">
+              Rate Submission #{selectedSubmissionIndex + 1}
+            </h3>
             
-            {/* Rating panel */}
-            <div className="bg-gray-900 rounded-lg p-6">
-              <h2 className="text-lg font-bold mb-6 text-purple-400">Rate This Submission</h2>
+            <div className="space-y-6">
+              <StarRating
+                value={ratings.themeRating}
+                onChange={(value) => setRatings({ ...ratings, themeRating: value })}
+                label="Theme - How well does it match the vibe?"
+              />
               
-              <div className="space-y-6">
-                {/* Theme Rating */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">
-                    Theme (How well does it match the vibe?)
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                      <button
-                        key={n}
-                        onClick={() => setRatings({ ...ratings, themeRating: n })}
-                        className={`w-10 h-10 rounded ${
-                          ratings.themeRating >= n 
-                            ? "bg-purple-600 text-white" 
-                            : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                        } transition-colors`}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Design Rating */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">
-                    Design (Visual appeal and UX)
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                      <button
-                        key={n}
-                        onClick={() => setRatings({ ...ratings, designRating: n })}
-                        className={`w-10 h-10 rounded ${
-                          ratings.designRating >= n 
-                            ? "bg-purple-600 text-white" 
-                            : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                        } transition-colors`}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Functionality Rating */}
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">
-                    Functionality (Does it work? Is it complete?)
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                      <button
-                        key={n}
-                        onClick={() => setRatings({ ...ratings, functionalityRating: n })}
-                        className={`w-10 h-10 rounded ${
-                          ratings.functionalityRating >= n 
-                            ? "bg-purple-600 text-white" 
-                            : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                        } transition-colors`}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Submit button */}
+              <StarRating
+                value={ratings.designRating}
+                onChange={(value) => setRatings({ ...ratings, designRating: value })}
+                label="Design - Visual appeal and user experience"
+              />
+              
+              <StarRating
+                value={ratings.functionalityRating}
+                onChange={(value) => setRatings({ ...ratings, functionalityRating: value })}
+                label="Functionality - Does it work? Is it complete?"
+              />
+              
+              <div className="flex space-x-4 pt-4">
+                <button
+                  onClick={() => setShowRatingDialog(false)}
+                  className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 transition-colors rounded-lg font-bold"
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={handleSubmitRating}
                   disabled={submitting}
-                  className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors rounded-lg font-bold"
+                  className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors rounded-lg font-bold"
                 >
-                  {submitting ? "Submitting..." : 
-                   currentIndex === uncompletedAssignments.length - 1 ? "Submit Final Review" : "Submit & Next"}
+                  {submitting ? "Submitting..." : "Submit Rating"}
                 </button>
-                
-                {/* Progress indicator */}
-                <div className="pt-4 border-t border-gray-800">
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>Progress</span>
-                    <span>{completedCount}/{judgingAssignments.assignments?.length || 0} completed</span>
-                  </div>
-                  <div className="mt-2 h-2 bg-gray-800 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-purple-600 transition-all"
-                      style={{ width: `${(completedCount / (judgingAssignments.assignments?.length || 1)) * 100}%` }}
-                    />
-                  </div>
-                </div>
               </div>
             </div>
           </div>
