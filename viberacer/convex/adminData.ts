@@ -6,12 +6,8 @@ export const getAdminData = query({
     // Get stage state
     const stageState = await ctx.db.query("stageState").first();
     
-    // Get recent winners
-    const recentWinners = await ctx.db
-      .query("winners")
-      .withIndex("by_timestamp")
-      .order("desc")
-      .take(5);
+    // Get recent winners from leaderboard - use null for now since winners table is removed
+    const recentWinners: any[] = [];
     
     // Get contest state (legacy skips)
     const contestStateRecords = await ctx.db.query("contestState").collect();
@@ -75,11 +71,11 @@ export const getAdminData = query({
       lastCheckedTime: stageState?.lastCheckedTime,
       
       // Recent activity
-      recentWinners: recentWinners.map(w => ({
+      recentWinners: recentWinners?.map(w => ({
         name: w.name,
         contestHour: w.contestHour || "unknown",
         timestamp: w.timestamp,
-      })),
+      })) || [],
       
       // Legacy skip records (for debugging)
       activeSkips: contestStateRecords.length,

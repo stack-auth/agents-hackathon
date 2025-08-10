@@ -11,9 +11,9 @@ export default function AdminPage() {
   const adminData = useQuery(api.adminData.getAdminData);
   const systemStats = useQuery(api.admin.getSystemStats);
   const allContests = useQuery(api.admin.getAllContests);
-  const recentActivity = useQuery(api.admin.getRecentActivity);
-  const userStats = useQuery(api.admin.getUserStats);
-  const judgingStats = useQuery(api.judging.getJudgingStats);
+  const recentActivity = useQuery(api.admin.getRecentActivity, { limit: 20 });
+  const userStats = useQuery(api.admin.getUserStats, {});
+  const judgingStats = useQuery(api.judging.getJudgingStats, {});
   const advanceStage = useMutation(api.race.advanceStage);
   const initMonitoring = useMutation(api.race.initializeMonitoring);
   
@@ -143,8 +143,8 @@ export default function AdminPage() {
                 <p className="text-2xl font-bold">{systemStats?.uniqueUsers || 0}</p>
               </div>
               <div className="bg-white p-4 border border-gray-200">
-                <p className="text-xs text-gray-600 mb-1">Total Winners</p>
-                <p className="text-2xl font-bold">{systemStats?.totalWinners || 0}</p>
+                <p className="text-xs text-gray-600 mb-1">Unique Users</p>
+                <p className="text-2xl font-bold">{systemStats?.uniqueUsers || 0}</p>
               </div>
             </div>
             

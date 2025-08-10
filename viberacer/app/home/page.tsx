@@ -120,7 +120,6 @@ export default function HomePage() {
     if (!contestState) return { title: "Loading...", subtitle: "" };
     
     const now = new Date();
-    const currentHour = now.getHours();
     const currentMinutes = now.getMinutes();
     const currentSeconds = now.getSeconds();
     

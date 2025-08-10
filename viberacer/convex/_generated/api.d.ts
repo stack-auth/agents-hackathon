@@ -16,7 +16,6 @@ import type {
 import type * as admin from "../admin.js";
 import type * as adminData from "../adminData.js";
 import type * as clearContestState from "../clearContestState.js";
-import type * as clearWinners from "../clearWinners.js";
 import type * as config from "../config.js";
 import type * as contestConfig from "../contestConfig.js";
 import type * as contestHelpers from "../contestHelpers.js";
@@ -29,12 +28,10 @@ import type * as judgingAssignments from "../judgingAssignments.js";
 import type * as leaderboard from "../leaderboard.js";
 import type * as race from "../race.js";
 import type * as rankingCalculator from "../rankingCalculator.js";
-import type * as seed from "../seed.js";
 import type * as stageHandlers from "../stageHandlers.js";
 import type * as stageMonitor from "../stageMonitor.js";
 import type * as submissions from "../submissions.js";
 import type * as userProfile from "../userProfile.js";
-import type * as winners from "../winners.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -48,7 +45,6 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   adminData: typeof adminData;
   clearContestState: typeof clearContestState;
-  clearWinners: typeof clearWinners;
   config: typeof config;
   contestConfig: typeof contestConfig;
   contestHelpers: typeof contestHelpers;
@@ -61,12 +57,10 @@ declare const fullApi: ApiFromModules<{
   leaderboard: typeof leaderboard;
   race: typeof race;
   rankingCalculator: typeof rankingCalculator;
-  seed: typeof seed;
   stageHandlers: typeof stageHandlers;
   stageMonitor: typeof stageMonitor;
   submissions: typeof submissions;
   userProfile: typeof userProfile;
-  winners: typeof winners;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
